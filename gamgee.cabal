@@ -1,0 +1,53 @@
+name:           gamgee
+version:        0.1.0
+description:    Please see the README on GitHub at <https://github.com/rkaippully/gamgee#readme>
+homepage:       https://github.com/rkaippully/gamgee#readme
+bug-reports:    https://github.com/rkaippully/gamgee/issues
+author:         Raghu Kaippully
+maintainer:     rkaippully@gmail.com
+copyright:      2018 Raghu Kaippully
+license:        MPL-2.0
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+extra-source-files:
+    ChangeLog.md
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/rkaippully/gamgee
+
+executable gamgee
+  main-is: Main.hs
+  other-modules:
+      Gamgee.Command
+      Gamgee.CommandLine
+      Gamgee.Crypto
+      Gamgee.OTP
+      Gamgee.Token
+      Gamgee.Util
+      Paths_gamgee
+  hs-source-dirs:
+      src
+  default-extensions: DeriveAnyClass DeriveGeneric DerivingStrategies GADTs
+    GeneralizedNewtypeDeriving InstanceSigs MultiWayIf NoImplicitPrelude OverloadedStrings
+  ghc-options: -Wall -Wcompat -Wredundant-constraints -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N -O2
+  build-depends:
+      Hclip
+    , aeson
+    , base
+    , base64-bytestring
+    , bytestring
+    , cryptonite
+    , directory
+    , filepath
+    , memory
+    , optparse-applicative
+    , text
+    , time
+    , universum
+    , unix
+    , unordered-containers
+  default-language: Haskell2010
