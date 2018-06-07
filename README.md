@@ -30,7 +30,7 @@ code, but you can instead get a secret token from your service and add that to G
 Once you get the secret, create a token with this command:
 
 ```
-gamgee add -l <token-label> -s <secret>
+gamgee add -l "<token-label>" -s "<secret>"
 ```
 
 `token-label` is a convenient label that you choose for this token.
@@ -44,7 +44,7 @@ gamgee list
 You can also remove a token if it is no longer needed. Please remember that this cannot be undone:
 
 ```
-gamgee delete -l <token-label>
+gamgee delete -l "<token-label>"
 ```
 
 Finally, you can generate an OTP for authenticating with your token:
@@ -54,7 +54,7 @@ gamgee <token-label>
 ```
 
 This will generate an OTP and copy it to your clipboard. You can paste it into your authentication
-service. Alternatively, you can write the OTP to stdout with:
+service. Alternatively, you can write the OTP to standard output with:
 
 ```
 gamgee <token-label> --stdout
