@@ -12,6 +12,7 @@ import qualified Data.ByteArray         as ByteArray
 import qualified Data.ByteString.Base64 as Base64
 import qualified Data.ByteString.Lazy   as LBS
 import           Data.Maybe             (fromJust)
+import qualified Data.Text              as Text
 import qualified Gamgee.Token           as Token
 import qualified Gamgee.Util            as Util
 import           Universum
@@ -69,12 +70,14 @@ encryptSecret spec =
     -- Already encrypted
     Token.TokenSecretAES256 _ _ -> return spec
     -- Encrypt a plain text secret
-    Token.TokenSecretPlainText secret -> do
+    Token.TokenSecretPlainText plainSecret -> do
       password <- Util.getPassword "Password to encrypt (leave blank to skip encryption): "
       if password == ""
       then return spec
       else do
-        let key = genSecretKey password (undefined :: AES256)
+        -- Get a canonical secret
+        let secret = (Text.toUpper . Text.dropWhileEnd (== '=') . Text.replace " " "" . Text.replace "-" "" . Text.strip) plainSecret
+            key = genSecretKey password (undefined :: AES256)
         (encSecret, iv) <- encrypt key secret
         let secret' = Token.TokenSecretAES256 {
           Token.tokenSecretAES256IV = toBase64 $ ByteArray.convert iv
