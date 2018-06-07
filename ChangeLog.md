@@ -5,7 +5,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2018-06-07
+
+### Added
+- Support for secrets in non-canonical format (https://github.com/rkaippully/gamgee/issues/2)
+
 ## [0.1.0] - 2018-06-05
+
 ### Added
 - First version.
 - Supports TOTP based tokens
