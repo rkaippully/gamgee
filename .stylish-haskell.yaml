@@ -198,6 +198,11 @@ steps:
   # Remove trailing whitespace
   - trailing_whitespace: {}
 
+  # Squash multiple spaces between the left and right hand sides of some
+  # elements into single spaces. Basically, this undoes the effect of
+  # simple_align but is a bit less conservative.
+  # - squash: {}
+
 # A common setting is the number of columns (parts of) code will be wrapped
 # to. Different steps take this into account. Default: 80.
 columns: 100
@@ -219,13 +224,4 @@ newline: lf
 # needs to be aware of these, so it can parse the file correctly.
 #
 # No language extensions are enabled by default.
-language_extensions:
-  - DeriveAnyClass
-  - DeriveGeneric
-  - DerivingStrategies
-  - GADTs
-  - GeneralizedNewtypeDeriving
-  - InstanceSigs
-  - MultiWayIf
-  - NoImplicitPrelude
-  - OverloadedStrings
+# language_extensions:

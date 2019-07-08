@@ -1,3 +1,5 @@
-resolver: lts-11.11
+resolver: nightly-2019-06-28
 packages:
 - .
+extra-deps:
+- Hclip-3.0.0.4

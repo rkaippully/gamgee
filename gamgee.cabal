@@ -1,5 +1,5 @@
 name:           gamgee
-version:        0.2.0
+version:        1.0.0
 description:    Please see the README on GitHub at <https://github.com/rkaippully/gamgee#readme>
 homepage:       https://github.com/rkaippully/gamgee#readme
 bug-reports:    https://github.com/rkaippully/gamgee/issues
@@ -19,35 +19,56 @@ source-repository head
   location: https://github.com/rkaippully/gamgee
 
 executable gamgee
+  hs-source-dirs: app
   main-is: Main.hs
   other-modules:
-      Gamgee.Command
-      Gamgee.CommandLine
-      Gamgee.Crypto
-      Gamgee.OTP
-      Gamgee.Token
-      Gamgee.Util
+      Gamgee.Program.CommandLine
+      Gamgee.Program.Effects
       Paths_gamgee
+  build-depends:
+    gamgee
+    , base
+    , relude
+    , optparse-applicative
+    , polysemy
+    , polysemy-plugin
+    , safe-exceptions
+    , directory
+    , filepath
+    , aeson
+    , unix
+    , text
+    , time
+    , Hclip
+  ghc-options: -Wall -Wcompat -Wredundant-constraints -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N -O2 -fplugin=Polysemy.Plugin
+  default-language: Haskell2010
+
+library
+  exposed-modules:
+      Gamgee.Operation
+      Gamgee.Token
+      Gamgee.Effects
+      Gamgee.Effects.Crypto
+      Gamgee.Effects.CryptoRandom
+      Gamgee.Effects.SecretInput
+      Gamgee.Effects.TOTP
+      Gamgee.Effects.JSONStore
   hs-source-dirs:
       src
-  default-extensions: DeriveAnyClass DeriveGeneric DerivingStrategies GADTs
-    GeneralizedNewtypeDeriving InstanceSigs MultiWayIf NoImplicitPrelude OverloadedStrings
   ghc-options: -Wall -Wcompat -Wredundant-constraints -Wincomplete-record-updates
-    -Wincomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N -O2
+    -Wincomplete-uni-patterns -O2 -fplugin=Polysemy.Plugin
   build-depends:
-      Hclip
-    , aeson
+    aeson
     , base
+    , relude
     , base64-bytestring
     , bytestring
     , cryptonite
-    , directory
-    , filepath
-    , memory
-    , optparse-applicative
     , text
+    , memory
     , time
-    , universum
-    , unix
-    , unordered-containers
+    , safe-exceptions
+    , polysemy
+    , polysemy-plugin
   default-language: Haskell2010
