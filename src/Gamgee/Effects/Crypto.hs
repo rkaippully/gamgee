@@ -19,7 +19,7 @@ module Gamgee.Effects.Crypto
     , decryptSecret
 
       -- * Interpretations
-    , runCryptoIO
+    , runCrypto
     ) where
 
 import           Crypto.Cipher.AES           (AES256)
@@ -32,7 +32,7 @@ import qualified Data.Text                   as Text
 import qualified Gamgee.Effects.CryptoRandom as CR
 import qualified Gamgee.Effects.SecretInput  as SI
 import qualified Gamgee.Token                as Token
-import           Polysemy                    (Lift, Member, Members, Sem)
+import           Polysemy                    (Member, Members, Sem)
 import qualified Polysemy                    as P
 import qualified Polysemy.Error              as P
 import           Relude
@@ -68,8 +68,7 @@ encryptSecret spec =
     Token.TokenSecretAES256 _ _ -> return spec
     Token.TokenSecretPlainText plainSecret -> do
       -- Ask the user for a password
-      SI.secretPrompt "Password to encrypt (leave blank to skip encryption): "
-      password <- SI.secretInput
+      password <- SI.secretInput "Password to encrypt (leave blank to skip encryption): "
 
       if Text.null password
       then return spec
@@ -85,8 +84,7 @@ decryptSecret spec =
   case Token.tokenSecret spec of
     Token.TokenSecretPlainText plainSecret  -> return plainSecret
     Token.TokenSecretAES256 encIV encSecret -> do
-      SI.secretPrompt "Password: "
-      password <- SI.secretInput
+      password <- SI.secretInput "Password: "
       decrypt encIV encSecret password
 
 
@@ -94,8 +92,8 @@ decryptSecret spec =
 -- Interpretations
 ----------------------------------------------------------------------------------------------------
 
-runCryptoIO :: Members [Lift IO, CR.CryptoRandom, P.Error Text] r => Sem (Crypto : r) a -> Sem r a
-runCryptoIO = P.interpret $ \case
+runCrypto :: Members [CR.CryptoRandom, P.Error Text] r => Sem (Crypto : r) a -> Sem r a
+runCrypto = P.interpret $ \case
   Encrypt secret password -> do
     iv <- genRandomIV
     toTokenSecret iv secret password

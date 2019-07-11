@@ -21,54 +21,72 @@ source-repository head
 executable gamgee
   hs-source-dirs: app
   main-is: Main.hs
-  other-modules:
-      Gamgee.Program.CommandLine
-      Gamgee.Program.Effects
-      Paths_gamgee
-  build-depends:
-    gamgee
-    , base
-    , relude
-    , optparse-applicative
-    , polysemy
-    , polysemy-plugin
-    , safe-exceptions
-    , directory
-    , filepath
-    , aeson
-    , unix
-    , text
-    , time
-    , Hclip
+  other-modules: Gamgee.Program.CommandLine
+                 Gamgee.Program.Effects
+                 Paths_gamgee
+  build-depends: gamgee
+               , base
+               , relude
+               , optparse-applicative
+               , polysemy
+               , polysemy-plugin
+               , safe-exceptions
+               , directory
+               , filepath
+               , aeson
+               , unix
+               , text
+               , time
+               , Hclip
   ghc-options: -Wall -Wcompat -Wredundant-constraints -Wincomplete-record-updates
-    -Wincomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N -O2 -fplugin=Polysemy.Plugin
+               -Wincomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N -O2 -fplugin=Polysemy.Plugin
   default-language: Haskell2010
 
 library
-  exposed-modules:
-      Gamgee.Operation
-      Gamgee.Token
-      Gamgee.Effects
-      Gamgee.Effects.Crypto
-      Gamgee.Effects.CryptoRandom
-      Gamgee.Effects.SecretInput
-      Gamgee.Effects.TOTP
-      Gamgee.Effects.JSONStore
-  hs-source-dirs:
-      src
+  hs-source-dirs: src
+  exposed-modules: Gamgee.Operation
+                   Gamgee.Token
+                   Gamgee.Effects
+                   Gamgee.Effects.Crypto
+                   Gamgee.Effects.CryptoRandom
+                   Gamgee.Effects.SecretInput
+                   Gamgee.Effects.TOTP
+                   Gamgee.Effects.JSONStore
+                   Gamgee.Effects.ByteStore
   ghc-options: -Wall -Wcompat -Wredundant-constraints -Wincomplete-record-updates
-    -Wincomplete-uni-patterns -O2 -fplugin=Polysemy.Plugin
-  build-depends:
-    aeson
-    , base
-    , relude
-    , base64-bytestring
-    , bytestring
-    , cryptonite
-    , text
-    , memory
-    , time
-    , safe-exceptions
-    , polysemy
-    , polysemy-plugin
+               -Wincomplete-uni-patterns -O2 -fplugin=Polysemy.Plugin
+  build-depends: aeson
+               , base
+               , relude
+               , base64-bytestring
+               , bytestring
+               , cryptonite
+               , text
+               , memory
+               , time
+               , safe-exceptions
+               , polysemy
+               , polysemy-plugin
+  default-language: Haskell2010
+
+test-suite gamgee-test
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Main.hs
+  other-modules: Gamgee.Test.Golden
+                 Gamgee.Test.Effects
+  build-depends: gamgee
+               , base
+               , relude
+               , mtl
+               , tasty
+               , tasty-golden
+               , tasty-quickcheck
+               , polysemy
+               , polysemy-plugin
+               , filepath
+               , cryptonite
+               , time
+  ghc-options: -Wall -Wcompat -Wredundant-constraints -Wincomplete-record-updates
+               -Wincomplete-uni-patterns -O2 -fplugin=Polysemy.Plugin
   default-language: Haskell2010

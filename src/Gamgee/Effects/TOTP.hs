@@ -54,7 +54,7 @@ runTOTP = P.interpret $ \case
   GetTOTP spec time -> do
     secret <- Crypto.decryptSecret spec
     case Encoding.convertFromBase Encoding.Base32 (encodeUtf8 secret :: ByteString) of
-      Left _    -> P.throw "Internal Error: secret of this token is corrupt"
+      Left msg  -> P.throw $ "Internal Error: secret of this token is corrupt: " <> toText msg
       Right key -> computeTOTP spec key time
 
 computeTOTP :: Member (P.Error Text) r => Token.TokenSpec -> ByteString -> Clock.POSIXTime -> Sem r Text
@@ -85,49 +85,3 @@ computeTOTP spec key time =
                            Token.Digits6 -> (1000000, "6")
                            Token.Digits8 -> (100000000, "8")
       in fromString $ Printf.printf ("%0" ++ size ++ "d") (otp `mod` base)
-
-
-
-
-
-
-
-{-
--- | Generate the current OTP for a token
-computeTOTP :: Monad m => Token.TokenSpec -> m OTPString
-computeTOTP spec = do
-  secret <- undefined -- encodeUtf8 <$> Crypto.getSecret spec
-  case Encoding.convertFromBase Encoding.Base32 (secret :: ByteString) of
-    Left _ -> error ("Secret of this token is corrupt" :: Text)
-    Right key -> do
-      hash <- getTOTP spec key
-      return $ hashToOTP (Token.tokenDigits spec) hash
-
-getTOTP :: Monad m => Token.TokenSpec -> ByteString -> m OTP.OTP
-getTOTP spec key = do
-  now <- undefined -- floor <$> Clock.getPOSIXTime
-  let period = Token.unTokenPeriod $ Token.tokenPeriod spec
-      digits = case Token.tokenDigits spec of
-                Token.Digits6 -> OTP.OTP6
-                Token.Digits8 -> OTP.OTP8
-
-      mkParams :: (HashAlgos.HashAlgorithm h) => h -> Either String (OTP.TOTPParams h)
-      mkParams alg = OTP.mkTOTPParams alg 0 period digits OTP.NoSkew
-
-      mkOTP :: (HashAlgos.HashAlgorithm h) => OTP.TOTPParams h -> Either String OTP.OTP
-      mkOTP p = return $ OTP.totp p key now
-
-      result = case Token.tokenAlgorithm spec of
-                Token.AlgorithmSHA1   -> mkParams HashAlgos.SHA1 >>= mkOTP
-                Token.AlgorithmSHA256 -> mkParams HashAlgos.SHA256 >>= mkOTP
-                Token.AlgorithmSHA512 -> mkParams HashAlgos.SHA512 >>= mkOTP
-  either (error . fromString) return result
-
--- | Convert a 32-bit OTP to string format
-hashToOTP :: Token.TokenDigits -> Word32 -> OTPString
-hashToOTP digits hash =
-  let (base, size) = case digits of
-                      Token.Digits6 -> (1000000, "6")
-                      Token.Digits8 -> (100000000, "8")
-  in OTPString $ Printf.printf ("%0" ++ size ++ "d") (hash `mod` base)
--}

@@ -36,9 +36,9 @@ runAddToken :: Token.TokenSpec -> IO ()
 runAddToken spec = Eff.runM_
                    $ Eff.runErrorStdErr
                    $ Eff.runCryptoRandomIO
-                   $ Eff.runCryptoIO
+                   $ Eff.runCrypto
                    $ Eff.runSecretInputIO
-                   $ Eff.runGamgeeFileStoreIO
+                   $ Eff.runGamgeeByteStoreIO
                    $ Eff.runGamgeeJSONStore
                    $ Eff.runStateJSON
                    $ Operation.addToken spec
@@ -46,7 +46,7 @@ runAddToken spec = Eff.runM_
 runDeleteToken :: Token.TokenIdentifier -> IO ()
 runDeleteToken t = Eff.runM_
                    $ Eff.runErrorStdErr
-                   $ Eff.runGamgeeFileStoreIO
+                   $ Eff.runGamgeeByteStoreIO
                    $ Eff.runGamgeeJSONStore
                    $ Eff.runStateJSON
                    $ Operation.deleteToken t
@@ -55,7 +55,7 @@ runListTokens :: IO ()
 runListTokens = Eff.runM_
                 $ Eff.runErrorStdErr
                 $ Eff.runOutputStdOut
-                $ Eff.runGamgeeFileStoreIO
+                $ Eff.runGamgeeByteStoreIO
                 $ Eff.runGamgeeJSONStore
                 $ Eff.runStateJSON Operation.listTokens
 
@@ -67,9 +67,9 @@ runGetOTP t o = do
     $ Eff.runErrorStdErr
     $ (if o == Cmd.OutputStdOut then Eff.runOutputStdOut else Eff.runOutputClipboard)
     $ Eff.runCryptoRandomIO
-    $ Eff.runCryptoIO
+    $ Eff.runCrypto
     $ Eff.runSecretInputIO
-    $ Eff.runGamgeeFileStoreIO
+    $ Eff.runGamgeeByteStoreIO
     $ Eff.runGamgeeJSONStore
     $ Eff.runStateJSON
     $ Eff.runTOTP

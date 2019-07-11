@@ -14,7 +14,6 @@ module Gamgee.Effects.SecretInput
       SecretInput(..)
 
       -- * Actions
-    , secretPrompt
     , secretInput
 
       -- * Interpretations
@@ -39,10 +38,9 @@ import qualified System.IO              as IO
 -- appropriately. For example, an IO interpretation may chose not to
 -- echo the input to the console.
 data SecretInput i m a where
-  -- ^ Prompt the user for an input
-  SecretPrompt :: Text -> SecretInput i m ()
-  -- ^ Retrieve an input
-  SecretInput  :: SecretInput i m i
+  -- ^ Retrieve a secret input
+  SecretInput :: Text              -- ^ A prompt
+              -> SecretInput i m i
 
 P.makeSem ''SecretInput
 
@@ -51,10 +49,15 @@ P.makeSem ''SecretInput
 -- Interpretations
 ----------------------------------------------------------------------------------------------------
 
-runSecretInputIO :: (Member (Lift IO) r, IsString i) => Sem (SecretInput i : r) a -> Sem r a
+runSecretInputIO :: (Member (Lift IO) r) => Sem (SecretInput Text : r) a -> Sem r a
 runSecretInputIO = P.interpret $ \case
-  SecretPrompt s -> P.sendM $ putText s >> IO.hFlush stdout
-  SecretInput    -> P.sendM $ fromString . toString <$> (withoutEcho getLine <* IO.putChar '\n')
+  SecretInput prompt -> P.sendM $ do
+    putText prompt
+    IO.hFlush stdout
+    i <- withoutEcho getLine
+    IO.putChar '\n'
+    return i
+
     where
       withoutEcho :: IO a -> IO a
       withoutEcho f = do
