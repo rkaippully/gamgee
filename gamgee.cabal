@@ -76,6 +76,7 @@ test-suite gamgee-test
   hs-source-dirs: test
   main-is: Main.hs
   other-modules: Gamgee.Test.Golden
+                 Gamgee.Test.Property
                  Gamgee.Test.Effects
   build-depends: gamgee -any
                , base >=4.12.0.0 && <4.13
