@@ -3,13 +3,12 @@
 
 module Main where
 
-import qualified Gamgee.Test.Golden as G
+import qualified Gamgee.Test.Golden   as G
+import qualified Gamgee.Test.Property as P
 import           Relude
-import qualified Test.Tasty         as T
+import qualified Test.Tasty           as T
 
 
 main :: IO ()
-main = T.defaultMain $ T.testGroup "All Tests" [ unitTests ]
-
-unitTests :: T.TestTree
-unitTests = T.testGroup "Unit Tests" [ G.goldenTests ]
+main = T.defaultMain $ T.testGroup "All Tests" [ G.goldenTests
+                                               , P.propertyTests ]
