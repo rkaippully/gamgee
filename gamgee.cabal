@@ -86,6 +86,7 @@ test-suite gamgee-test
                , tasty-golden >=2.3.2 && <2.4
                , tasty-quickcheck >=0.10.1 && <0.11
                , QuickCheck >=2.13.1 && <2.14
+               , quickcheck-state-machine >=0.6.0 && <0.7
                , polysemy >=0.5.0.1 && <0.6
                , polysemy-plugin >=0.2.1.1 && <0.3
                , filepath >=1.4.2.1 && <1.5

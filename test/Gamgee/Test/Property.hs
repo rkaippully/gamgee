@@ -9,11 +9,11 @@ import           Test.QuickCheck       (allProperties)
 import qualified Test.Tasty            as T
 import qualified Test.Tasty.QuickCheck as T
 
-prop_commutativeAdd :: Int -> Int -> Bool
-prop_commutativeAdd x y = x + y == y + x
+prop_commutativeMul :: Int -> Int -> Int -> Bool
+prop_commutativeMul x y z = x * (y * z) == (x * y) * z
 
 -- Template Haskell hack to make the following $allProperties work
 return []
 
 propertyTests :: T.TestTree
-propertyTests = T.testProperties "Foo" $allProperties
+propertyTests = T.testProperties "Property Tests" $allProperties

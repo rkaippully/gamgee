@@ -117,13 +117,13 @@ runDeleteToken cfg t = P.runM
                        $ Eff.runStateJSON
                        $ Operation.deleteToken t
 
-runListTokens :: TestConfig s -> ST s (Either ErrorMessage ([OutputMessage], ()))
-runListTokens cfg = P.runM
-                    $ P.runError
-                    $ runOutputPure
-                    $ runByteStoreST cfg
-                    $ Eff.runGamgeeJSONStore
-                    $ Eff.runStateJSON Operation.listTokens
+runListTokens :: TestConfig s -> ST s (Either ErrorMessage [OutputMessage])
+runListTokens cfg = fmap fst <$> (P.runM
+                                  $ P.runError
+                                  $ runOutputPure
+                                  $ runByteStoreST cfg
+                                  $ Eff.runGamgeeJSONStore
+                                  $ Eff.runStateJSON Operation.listTokens)
 
 
 runGetOTP :: CR.DRG gen
@@ -132,16 +132,16 @@ runGetOTP :: CR.DRG gen
           -> [Text]
           -> Token.TokenIdentifier
           -> Clock.POSIXTime
-          -> ST s (Either ErrorMessage ([OutputMessage], ()))
+          -> ST s (Either ErrorMessage [OutputMessage])
 runGetOTP drg cfg input tok time =
-  P.runM
-  $ P.runError
-  $ runOutputPure
-  $ runCryptoRandom drg
-  $ Eff.runCrypto
-  $ runListSecretInput input
-  $ runByteStoreST cfg
-  $ Eff.runGamgeeJSONStore
-  $ Eff.runStateJSON
-  $ Eff.runTOTP
-  $ Operation.getOTP tok time
+  fmap fst <$> (P.runM
+                $ P.runError
+                $ runOutputPure
+                $ runCryptoRandom drg
+                $ Eff.runCrypto
+                $ runListSecretInput input
+                $ runByteStoreST cfg
+                $ Eff.runGamgeeJSONStore
+                $ Eff.runStateJSON
+                $ Eff.runTOTP
+                $ Operation.getOTP tok time)
