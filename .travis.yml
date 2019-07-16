@@ -9,18 +9,25 @@ cache:
   - "$HOME/.stack"
   - "$TRAVIS_BUILD_DIR/.stack-work"
 
-os:
-  - linux
-  - osx
-
 matrix:
   include:
 
-  # Cabal
-  - ghc: 8.6.5
+  # Cabal (Linux)
+  - os: linux
+    ghc: 8.6.5
 
-  # Stack
-  - ghc: 8.6.5
+  # Cabal (MacOS)
+  - os: osx
+    ghc: 8.6.5
+
+  # Stack (Linux)
+  - os: linux
+    ghc: 8.6.5
+    env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
+
+  # Stack (MacOS)
+  - os: osx
+    ghc: 8.6.5
     env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
 
 branches:
