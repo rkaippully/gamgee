@@ -1,54 +1,91 @@
 sudo: true
-language: haskell
-
-cabal: "2.4"
+language: generic
 
 cache:
   directories:
-  - "$HOME/.cabal/store"
+  - "$HOME/.ghc"
+  - "$HOME/.cabal"
   - "$HOME/.stack"
   - "$TRAVIS_BUILD_DIR/.stack-work"
-
-matrix:
-  include:
-
-  # Cabal (Linux)
-  - os: linux
-    ghc: 8.6.5
-
-  # Cabal (MacOS)
-  - os: osx
-    ghc: 8.6.5
-
-  # Stack (Linux)
-  - os: linux
-    ghc: 8.6.5
-    env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
-
-  # Stack (MacOS)
-  - os: osx
-    ghc: 8.6.5
-    env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
 
 branches:
   only:
   - master
   - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
 
+matrix:
+  include:
+
+  # Cabal (Linux)
+  - env: BUILD=cabal GHCVER=8.6.5 CABALVER=2.4 HAPPYVER=1.19.5 ALEXVER=3.1.7
+    compiler: ": #Cabal 8.6.5 (Linux)"
+    os: linux
+    addons: {apt: {packages: [cabal-install-2.4,ghc-8.6.5,happy-1.19.5,alex-3.1.7], sources: [hvr-ghc]}}
+
+  # Stack (Linux)
+  - env: BUILD=stack
+    compiler: ": #Stack 8.6.5 (Linux)"
+    os: linux
+    addons: {apt: {packages: [libgmp-dev]}}
+
+  # Stack (MacOS)
+  - env: BUILD=stack
+    compiler: ": #stack 8.6.5 (MacOS)"
+    os: osx
+
+before_install:
+  # Using compiler above sets CC to an invalid value, so unset it
+  - unset CC
+
+  # Download and unpack the stack executable
+  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:/opt/alex/$ALEXVER/bin:/opt/happy/$HAPPYVER/bin:$HOME/.cabal/bin:$PATH
+  - mkdir -p ~/.local/bin
+  - |
+    if [ `uname` = "Darwin" ]
+    then
+      travis_retry curl --insecure -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
+    else
+      travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+    fi
+
+  # Use the more reliable S3 mirror of Hackage
+  mkdir -p $HOME/.cabal
+  echo 'remote-repo: hackage.haskell.org:http://hackage.fpcomplete.com/' > $HOME/.cabal/config
+  echo 'remote-repo-cache: $HOME/.cabal/packages' >> $HOME/.cabal/config
+
 install:
-  - sh tools/install.sh
+  - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
+  - |
+    set -ex
+    case "$BUILD" in
+      stack)
+        # Build the dependencies
+        stack --no-terminal --install-ghc test --bench --only-dependencies
+        ;;
+      cabal)
+        cabal --version
+        travis_retry cabal new-update
+        ;;
+    esac
+    set +ex
 
 script:
   - |
-    if [ -z "$STACK_YAML" ]; then
-      cabal new-run gamgee-test --enable-tests -- --quickcheck-tests 200
-    else
-      stack test --system-ghc --ta "--quickcheck-tests 200"
-    fi
+    set -ex
+    case "$BUILD" in
+      stack)
+        stack --no-terminal test --ta "--quickcheck-tests 200"
+        ;;
+      cabal)
+        cabal new-build --enable-tests
+        cabal new-run gamgee-test --enable-tests -- --quickcheck-tests 200
+        ;;
+    esac
+    set +ex
 
 after_success:
   - |
-    if [ -n "$STACK_YAML" ]; then
+    if [ "$BUILD" = "stack" ]; then
       sh tools/attach-binary.sh
     fi
 
