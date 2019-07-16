@@ -9,6 +9,10 @@ cache:
   - "$HOME/.stack"
   - "$TRAVIS_BUILD_DIR/.stack-work"
 
+os:
+  - linux
+  - osx
+
 matrix:
   include:
 
