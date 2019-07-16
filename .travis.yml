@@ -89,7 +89,7 @@ script:
   set -ex
   case "$BUILD" in
     stack)
-      stack --no-terminal $ARGS test
+      stack --no-terminal $ARGS test --ta "--quickcheck-tests 200"
       ;;
     cabal)
       cabal install --enable-tests --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $PACKAGES
@@ -108,9 +108,9 @@ script:
         cabal configure --enable-tests --ghc-options -O0
         cabal build
         if [ "$CABALVER" = "1.16" ] || [ "$CABALVER" = "1.18" ]; then
-          cabal test
+          cabal test --test-options "--quickcheck-tests 200"
         else
-          cabal test --show-details=streaming --log=/dev/stdout
+          cabal test --test-options "--quickcheck-tests 200" --show-details=streaming --log=/dev/stdout
         fi
         cd $ORIGDIR
       done

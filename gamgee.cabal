@@ -15,6 +15,7 @@ cabal-version:  >= 1.10
 extra-source-files:
     ChangeLog.md
     README.md
+    test/data/golden/getOTPTest.txt
 
 source-repository head
   type: git
