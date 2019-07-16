@@ -1,88 +1,122 @@
-sudo: true
-language: generic
-
-cache:
-  directories:
-  - "$HOME/.ghc"
-  - "$HOME/.cabal"
-  - "$HOME/.stack"
-  - "$TRAVIS_BUILD_DIR/.stack-work"
+# Use new container infrastructure to enable caching
+sudo: false
 
 branches:
   only:
   - master
   - /^v\d+\.\d+(\.\d+)?(-\S*)?$/
 
+# Do not choose a language; we provide our own build tools.
+language: generic
+
+# Caching so the next build will be fast too.
+cache:
+  directories:
+  - $HOME/.ghc
+  - $HOME/.cabal
+  - $HOME/.stack
+  - $TRAVIS_BUILD_DIR/.stack-work
+
+# The different configurations we want to test. We have BUILD=cabal which uses
+# cabal-install, and BUILD=stack which uses Stack. More documentation on each
+# of those below.
+#
+# We set the compiler values here to tell Travis to use a different
+# cache file per set of arguments.
+#
 matrix:
   include:
-
-  # Cabal (Linux)
   - env: BUILD=cabal GHCVER=8.6.5 CABALVER=2.4 HAPPYVER=1.19.5 ALEXVER=3.1.7
-    compiler: ": #Cabal 8.6.5 (Linux)"
-    os: linux
+    compiler: ": #Cabal (Linux)"
     addons: {apt: {packages: [cabal-install-2.4,ghc-8.6.5,happy-1.19.5,alex-3.1.7], sources: [hvr-ghc]}}
 
-  # Stack (Linux)
-  - env: BUILD=stack
-    compiler: ": #Stack 8.6.5 (Linux)"
-    os: linux
+  # The Stack builds.
+  - env: BUILD=stack ARGS=""
+    compiler: ": #Stack (Linux)"
     addons: {apt: {packages: [libgmp-dev]}}
 
-  # Stack (MacOS)
-  - env: BUILD=stack
-    compiler: ": #stack 8.6.5 (MacOS)"
+  # Build on macOS in addition to Linux
+  - env: BUILD=stack ARGS=""
+    compiler: ": #Stack (MacOS)"
     os: osx
 
 before_install:
-  # Using compiler above sets CC to an invalid value, so unset it
-  - unset CC
+# Using compiler above sets CC to an invalid value, so unset it
+- unset CC
 
-  # Download and unpack the stack executable
-  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:/opt/alex/$ALEXVER/bin:/opt/happy/$HAPPYVER/bin:$HOME/.cabal/bin:$PATH
-  - mkdir -p ~/.local/bin
-  - |
-    if [ `uname` = "Darwin" ]
-    then
-      travis_retry curl --insecure -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
-    else
-      travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-    fi
+# Download and unpack the stack executable
+- export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:/opt/alex/$ALEXVER/bin:/opt/happy/$HAPPYVER/bin:$HOME/.cabal/bin:$PATH
+- mkdir -p ~/.local/bin
+- |
+  if [ `uname` = "Darwin" ]
+  then
+    travis_retry curl --insecure -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
+  else
+    travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+  fi
 
-    # Use the more reliable S3 mirror of Hackage
-    mkdir -p $HOME/.cabal
-    echo 'remote-repo: hackage.haskell.org:http://hackage.fpcomplete.com/' > $HOME/.cabal/config
-    echo 'remote-repo-cache: $HOME/.cabal/packages' >> $HOME/.cabal/config
+  # Use the more reliable S3 mirror of Hackage
+  mkdir -p $HOME/.cabal
+  echo 'remote-repo: hackage.haskell.org:http://hackage.fpcomplete.com/' > $HOME/.cabal/config
+  echo 'remote-repo-cache: $HOME/.cabal/packages' >> $HOME/.cabal/config
+
 
 install:
-  - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
-  - |
-    set -ex
-    case "$BUILD" in
-      stack)
-        # Build the dependencies
-        stack --no-terminal --install-ghc test --only-dependencies
-        ;;
-      cabal)
-        cabal --version
-        travis_retry cabal new-update
-        cabal new-install --only-dependencies --enable-tests --force-reinstalls --reorder-goals --max-backjumps=-1
-        ;;
-    esac
-    set +ex
+- echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
+- |
+  set -ex
+  case "$BUILD" in
+    stack)
+      # Build the dependencies
+      stack --no-terminal --install-ghc $ARGS test --only-dependencies
+      ;;
+    cabal)
+      cabal --version
+      travis_retry cabal update
+
+      # Get the list of packages from the stack.yaml file. Note that
+      # this will also implicitly run hpack as necessary to generate
+      # the .cabal files needed by cabal-install.
+      PACKAGES=$(stack --install-ghc query locals | grep '^ *path' | sed 's@^ *path:@@')
+
+      cabal install --only-dependencies --enable-tests --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $PACKAGES
+      ;;
+  esac
+  set +ex
 
 script:
-  - |
-    set -ex
-    case "$BUILD" in
-      stack)
-        stack --no-terminal test --ta "--quickcheck-tests 200"
-        ;;
-      cabal)
-        cabal new-install --enable-tests --force-reinstalls --reorder-goals --max-backjumps=-1
-        cabal new-run gamgee-test --enable-tests -- --quickcheck-tests 200
-        ;;
-    esac
-    set +ex
+- |
+  set -ex
+  case "$BUILD" in
+    stack)
+      stack --no-terminal $ARGS test
+      ;;
+    cabal)
+      cabal install --enable-tests --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1 $PACKAGES
+
+      ORIGDIR=$(pwd)
+      for dir in $PACKAGES
+      do
+        cd $dir
+        cabal check || [ "$CABALVER" == "1.16" ]
+        cabal sdist
+        PKGVER=$(cabal info . | awk '{print $2;exit}')
+        SRC_TGZ=$PKGVER.tar.gz
+        cd dist
+        tar zxfv "$SRC_TGZ"
+        cd "$PKGVER"
+        cabal configure --enable-tests --ghc-options -O0
+        cabal build
+        if [ "$CABALVER" = "1.16" ] || [ "$CABALVER" = "1.18" ]; then
+          cabal test
+        else
+          cabal test --show-details=streaming --log=/dev/stdout
+        fi
+        cd $ORIGDIR
+      done
+      ;;
+  esac
+  set +ex
 
 after_success:
   - |
