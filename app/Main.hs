@@ -3,7 +3,6 @@
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE NoImplicitPrelude   #-}
 {-# LANGUAGE PolyKinds           #-}
-{-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators       #-}
 
@@ -58,7 +57,6 @@ runListTokens = Eff.runM_
                 $ Eff.runGamgeeByteStoreIO
                 $ Eff.runGamgeeJSONStore
                 $ Eff.runStateJSON Operation.listTokens
-
 
 runGetOTP :: Token.TokenIdentifier -> Cmd.OutputMode -> IO ()
 runGetOTP t o = do

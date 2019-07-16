@@ -28,6 +28,7 @@ import           Relude
 
 -- | Type of token TOTP or HOTP (not supported yet)
 data TokenType = TOTP
+  deriving stock Show
 
 instance Aeson.FromJSON TokenType where
   parseJSON (Aeson.String "totp") = return TOTP
@@ -40,7 +41,7 @@ instance Aeson.ToJSON TokenType where
 newtype TokenLabel = TokenLabel {
   unTokenLabel :: Text
   }
-  deriving newtype (IsString, Aeson.FromJSON, Aeson.ToJSON)
+  deriving newtype (Show, IsString, Aeson.FromJSON, Aeson.ToJSON)
 
 -- | Secret used to generate OTPs
 data TokenSecret = TokenSecretPlainText Text
@@ -48,22 +49,24 @@ data TokenSecret = TokenSecretPlainText Text
                      tokenSecretAES256IV     :: Text
                      , tokenSecretAES256Data :: Text
                      }
-                 deriving stock    (Generic)
+                 deriving stock    (Show, Generic)
                  deriving anyclass (Aeson.FromJSON, Aeson.ToJSON)
 
 -- | Optional issuer of this token
 newtype TokenIssuer = TokenIssuer {
   unTokenIssuer :: Text
   }
-  deriving newtype (IsString, Aeson.FromJSON, Aeson.ToJSON)
+  deriving newtype (Show, IsString, Aeson.FromJSON, Aeson.ToJSON)
 
 data TokenAlgorithm = AlgorithmSHA1
                     | AlgorithmSHA256
                     | AlgorithmSHA512
-                    deriving stock    (Generic)
+                    deriving stock    (Show, Generic)
                     deriving anyclass (Aeson.FromJSON, Aeson.ToJSON)
 
-data TokenDigits = Digits6 | Digits8
+data TokenDigits = Digits6
+                 | Digits8
+                 deriving stock Show
 
 instance Aeson.FromJSON TokenDigits where
   parseJSON (Aeson.Number 6) = return Digits6
@@ -78,7 +81,7 @@ instance Aeson.ToJSON TokenDigits where
 newtype TokenPeriod = TokenPeriod {
   unTokenPeriod :: Word16
   }
-  deriving newtype (Eq, Ord, Enum, Num, Real, Integral, Aeson.FromJSON, Aeson.ToJSON)
+  deriving newtype (Eq, Ord, Enum, Num, Real, Integral, Show, Aeson.FromJSON, Aeson.ToJSON)
 
 data TokenSpec = TokenSpec {
   -- ^ TOTP/HOTP token
@@ -96,14 +99,14 @@ data TokenSpec = TokenSpec {
   -- ^ Refresh interval of the token - typically 30 sec
   , tokenPeriod    :: TokenPeriod
   }
-  deriving stock    (Generic)
+  deriving stock    (Generic, Show)
   deriving anyclass (Aeson.FromJSON, Aeson.ToJSON)
 
 -- An identifier for a token. This is derived from the label and issuer
 newtype TokenIdentifier = TokenIdentifier {
   unTokenIdentifier :: Text
   }
-  deriving newtype (Eq, Hashable, IsString, Semigroup, ToString
+  deriving newtype (Eq, Show, Hashable, IsString, Semigroup, ToString
                    , Aeson.FromJSON, Aeson.ToJSON
                    , Aeson.FromJSONKey, Aeson.ToJSONKey)
 

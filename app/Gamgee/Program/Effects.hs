@@ -10,6 +10,8 @@
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Gamgee.Program.Effects
   ( runM_
   , runGamgeeByteStoreIO
@@ -21,6 +23,7 @@ module Gamgee.Program.Effects
 import           Control.Exception.Safe (catch)
 import qualified Data.Text.IO           as TIO
 import qualified Gamgee.Effects         as Eff
+import qualified Gamgee.Token           as Token
 import           Polysemy               (Lift, Member, Members, Sem)
 import qualified Polysemy               as P
 import qualified Polysemy.Error         as P
@@ -54,8 +57,29 @@ runOutputClipboard = P.interpret $ \case
 -- Interpret Error by writing it to stderr
 ----------------------------------------------------------------------------------------------------
 
-runErrorStdErr :: Member (Lift IO) r => Sem (P.Error Text : r) a -> Sem r (Maybe a)
-runErrorStdErr a = P.runError a >>= either printError (return . Just)
+instance ToText Eff.EffError where
+  toText (Eff.AlreadyExists ident)        = "A token named '" <> Token.unTokenIdentifier ident <> "' already exists."
+  toText (Eff.NoSuchToken ident)          = "No such token: '" <> Token.unTokenIdentifier ident <> "'"
+  toText (Eff.CryptoError ce)             = show ce
+  toText (Eff.CorruptIV _)                = "Internal Error: Unable to decode initial vector, your config is probably corrupt"
+  toText (Eff.CorruptBase64Encoding msg)  = msg
+  toText (Eff.SecretDecryptError _)       = "Error decrypting token. Did you provide an incorrect password?"
+  toText (Eff.InvalidTokenPeriod tp)      = "Unsupported token period: " <> show (Token.unTokenPeriod tp)
+  toText (Eff.UnsupportedConfigVersion v) = "Internal Error: Unsupported config version: " <> show v
+  toText (Eff.JSONDecodeError msg)        = "Internal Error: Could not decode Gamgee config file: " <> msg
+
+data ByteStoreError = ReadError IO.IOError
+                    | WriteError IO.IOError
+
+instance ToText ByteStoreError where
+  toText (ReadError e)  = "Internal Error: Error reading configuration file: " <> show e
+  toText (WriteError e) = "Internal Error: Error saving configuration file: " <> show e
+
+runErrorStdErr :: Member (Lift IO) r => Sem (P.Error Eff.EffError : P.Error ByteStoreError : r) a -> Sem r (Maybe a)
+runErrorStdErr = fmap join . runToTextError . runToTextError
+
+runToTextError :: (Member (Lift IO) r, ToText e) => Sem (P.Error e : r) a -> Sem r (Maybe a)
+runToTextError a = P.runError a >>= either (printError . toText) (return . Just)
   where
     printError :: Member (Lift IO) r => Text -> Sem r (Maybe a)
     printError msg = P.sendM (TIO.hPutStrLn stderr msg) $> Nothing
@@ -82,7 +106,7 @@ runByteStoreFile file handleReadError handleWriteError = P.interpret $ \case
     whenJust res P.throw
     P.sendM $ Files.setFileMode file $ Files.ownerReadMode `Files.unionFileModes` Files.ownerWriteMode
 
-runGamgeeByteStoreIO :: Members [Lift IO, P.Error Text] r
+runGamgeeByteStoreIO :: Members [Lift IO, P.Error ByteStoreError] r
                      => Sem (Eff.ByteStore : r) a
                      -> Sem r a
 runGamgeeByteStoreIO prog = do
@@ -90,13 +114,13 @@ runGamgeeByteStoreIO prog = do
   runByteStoreFile file handleReadError handleWriteError prog
 
   where
-    handleReadError :: IO.IOError -> Either Text (Maybe LByteString)
+    handleReadError :: IO.IOError -> Either ByteStoreError (Maybe LByteString)
     handleReadError e = if IO.isDoesNotExistError e
                         then Right Nothing
-                        else Left $ show e
+                        else Left $ ReadError e
 
-    handleWriteError :: IO.IOError -> Maybe Text
-    handleWriteError e = Just $ "Internal Error: Error saving configuration file: " <> show e
+    handleWriteError :: IO.IOError -> Maybe ByteStoreError
+    handleWriteError e = Just $ WriteError e
 
 -- | Path under which tokens are stored - typically ~/.config/gamgee/tokens.json
 configFilePath :: IO FilePath

@@ -26,6 +26,7 @@ import qualified Data.ByteArray.Encoding    as Encoding
 import qualified Data.Time.Clock.POSIX      as Clock
 import           Gamgee.Effects.Crypto      (Crypto)
 import qualified Gamgee.Effects.Crypto      as Crypto
+import qualified Gamgee.Effects.Error       as Err
 import           Gamgee.Effects.SecretInput (SecretInput)
 import qualified Gamgee.Token               as Token
 import           Polysemy                   (Member, Members, Sem)
@@ -49,15 +50,15 @@ P.makeSem ''TOTP
 -- Interpret TOTP
 ----------------------------------------------------------------------------------------------------
 
-runTOTP :: Members [SecretInput Text, Crypto, P.Error Text] r => Sem (TOTP : r) a -> Sem r a
+runTOTP :: Members [SecretInput Text, Crypto, P.Error Err.EffError] r => Sem (TOTP : r) a -> Sem r a
 runTOTP = P.interpret $ \case
   GetTOTP spec time -> do
     secret <- Crypto.decryptSecret spec
     case Encoding.convertFromBase Encoding.Base32 (encodeUtf8 secret :: ByteString) of
-      Left msg  -> P.throw $ "Internal Error: secret of this token is corrupt: " <> toText msg
+      Left msg  -> P.throw $ Err.SecretDecryptError $ toText msg
       Right key -> computeTOTP spec key time
 
-computeTOTP :: Member (P.Error Text) r => Token.TokenSpec -> ByteString -> Clock.POSIXTime -> Sem r Text
+computeTOTP :: Member (P.Error Err.EffError) r => Token.TokenSpec -> ByteString -> Clock.POSIXTime -> Sem r Text
 computeTOTP spec key time =
   case Token.tokenAlgorithm spec of
     Token.AlgorithmSHA1   -> makeOTP <$> makeParams HashAlgos.SHA1
@@ -65,16 +66,18 @@ computeTOTP spec key time =
     Token.AlgorithmSHA512 -> makeOTP <$> makeParams HashAlgos.SHA512
 
   where
-    period :: Word16
-    period = Token.unTokenPeriod $ Token.tokenPeriod spec
+    period :: Token.TokenPeriod
+    period = Token.tokenPeriod spec
 
     digits :: OTP.OTPDigits
     digits = case Token.tokenDigits spec of
                Token.Digits6 -> OTP.OTP6
                Token.Digits8 -> OTP.OTP8
 
-    makeParams :: (Member (P.Error Text) r, HashAlgos.HashAlgorithm h) => h -> Sem r (OTP.TOTPParams h)
-    makeParams alg = either (P.throw . fromString) return $ OTP.mkTOTPParams alg 0 period digits OTP.NoSkew
+    makeParams :: (Member (P.Error Err.EffError) r, HashAlgos.HashAlgorithm h) => h -> Sem r (OTP.TOTPParams h)
+    makeParams alg = either (const (P.throw $ Err.InvalidTokenPeriod period))
+                            return $
+                            OTP.mkTOTPParams alg 0 (Token.unTokenPeriod period) digits OTP.NoSkew
 
     makeOTP :: (HashAlgos.HashAlgorithm h) => OTP.TOTPParams h -> Text
     makeOTP p = format $ OTP.totp p key $ floor time

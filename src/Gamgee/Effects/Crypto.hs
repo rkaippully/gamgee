@@ -30,6 +30,7 @@ import qualified Data.ByteString.Base64      as B64
 import qualified Data.ByteString.Lazy        as LBS
 import qualified Data.Text                   as Text
 import qualified Gamgee.Effects.CryptoRandom as CR
+import qualified Gamgee.Effects.Error        as Err
 import qualified Gamgee.Effects.SecretInput  as SI
 import qualified Gamgee.Token                as Token
 import           Polysemy                    (Member, Members, Sem)
@@ -92,7 +93,7 @@ decryptSecret spec =
 -- Interpretations
 ----------------------------------------------------------------------------------------------------
 
-runCrypto :: Members [CR.CryptoRandom, P.Error Text] r => Sem (Crypto : r) a -> Sem r a
+runCrypto :: Members [CR.CryptoRandom, P.Error Err.EffError] r => Sem (Crypto : r) a -> Sem r a
 runCrypto = P.interpret $ \case
   Encrypt secret password -> do
     iv <- genRandomIV
@@ -101,7 +102,7 @@ runCrypto = P.interpret $ \case
   Decrypt encIV encSecret password -> fromTokenSecret encIV encSecret password
 
 -- | Generate a random initialization vector
-genRandomIV :: Members [P.Error Text, CR.CryptoRandom] r => Sem r (CT.IV AES256)
+genRandomIV :: Members [P.Error Err.EffError, CR.CryptoRandom] r => Sem r (CT.IV AES256)
 genRandomIV = do
   bytes <- CR.randomBytes $ CT.blockSize (error "Internal Error: This shouldn't be evaluated" :: AES256)
   case CT.makeIV (bytes :: ByteString) of
@@ -109,31 +110,31 @@ genRandomIV = do
     Nothing -> error "Internal Error: Unable to generate random initial vector"
 
 -- | Generate an encrypted TokenSecret from an iv, a secret text and password
-toTokenSecret :: Member (P.Error Text) r
+toTokenSecret :: Member (P.Error Err.EffError) r
               => CT.IV AES256
               -> Text                    -- ^ Secret
               -> Text                    -- ^ Password
               -> Sem r Token.TokenSecret
 toTokenSecret iv secret password = do
-  cipher <- CE.onCryptoFailure (P.throw . show) return $ CT.cipherInit (passwordToKey password)
+  cipher <- CE.onCryptoFailure (P.throw . Err.CryptoError) return $ CT.cipherInit (passwordToKey password)
   return Token.TokenSecretAES256 {
     Token.tokenSecretAES256IV = toBase64 $ BA.convert iv
     , Token.tokenSecretAES256Data = toBase64 $ CT.ctrCombine cipher iv (encodeUtf8 secret)
     }
 
 -- | Extract the secret text from a TokenSecret given its password
-fromTokenSecret :: Member (P.Error Text) r
-                => Text                     -- ^ Base64 encoded IV
-                -> Text                     -- ^ Base64 encoded encrypted secret
-                -> Text                     -- ^ The password
-                -> Sem r Text               -- ^ IV and secret
+fromTokenSecret :: Member (P.Error Err.EffError) r
+                => Text       -- ^ Base64 encoded IV
+                -> Text       -- ^ Base64 encoded encrypted secret
+                -> Text       -- ^ The password
+                -> Sem r Text -- ^ IV and secret
 fromTokenSecret encIV encSecret password = do
   iv <- fromBase64 encIV
   case CT.makeIV iv of
-    Nothing  -> P.throw "Internal Error: Unable to decode initial vector, your config is probably corrupt"
+    Nothing  -> P.throw $ Err.CorruptIV iv
     Just iv' -> do
       secret <- fromBase64 encSecret
-      cipher <- CE.onCryptoFailure (P.throw . show) return $ CT.cipherInit (passwordToKey password)
+      cipher <- CE.onCryptoFailure (P.throw . Err.CryptoError) return $ CT.cipherInit (passwordToKey password)
       return $ decodeUtf8 $ CT.ctrCombine (cipher :: AES256) iv' secret
 
 passwordToKey :: Text -> ByteString
@@ -142,7 +143,7 @@ passwordToKey password = toStrict $ LBS.take 32 $ LBS.cycle $ encodeUtf8 passwor
 toBase64 :: ByteString -> Text
 toBase64 = decodeUtf8 . B64.encode
 
-fromBase64 :: Member (P.Error Text) r
+fromBase64 :: Member (P.Error Err.EffError) r
            => Text
            -> Sem r ByteString
-fromBase64 = either (P.throw . fromString) return .  B64.decode . encodeUtf8
+fromBase64 = either (P.throw . Err.CorruptBase64Encoding . toText) return .  B64.decode . encodeUtf8

@@ -25,8 +25,8 @@ module Gamgee.Effects.JSONStore
   ) where
 
 import qualified Data.Aeson               as Aeson
-import qualified Data.Aeson.Types         as Aeson
 import qualified Gamgee.Effects.ByteStore as BS
+import qualified Gamgee.Effects.Error     as Err
 import qualified Gamgee.Token             as Token
 import           Polysemy                 (Member, Sem)
 import qualified Polysemy                 as P
@@ -71,10 +71,9 @@ initialConfig = Config {
 -- Interpret JSONStore backed by a ByteStore
 ----------------------------------------------------------------------------------------------------
 
-runJSONStore :: (Aeson.ToJSON j)
-             => (o -> Sem (BS.ByteStore : r) j)           -- ^ Function to map object to a JSON serializable value
-             -> (Aeson.Value -> Sem (BS.ByteStore : r) o) -- ^ Function to map a JSON value to the object
-             -> (String -> Sem (BS.ByteStore : r) o)      -- ^ Function to handle errors in decoding
+runJSONStore :: (o -> Sem (BS.ByteStore : r) Config) -- ^ Function to map object to a JSON serializable value
+             -> (Config -> Sem (BS.ByteStore : r) o) -- ^ Function to map a JSON value to the object
+             -> (String -> Sem (BS.ByteStore : r) o) -- ^ Function to handle errors in decoding
              -> Sem (JSONStore o : r) a
              -> Sem (BS.ByteStore : r) a
 runJSONStore convertE convertD handleError =
@@ -85,23 +84,19 @@ runJSONStore convertE convertD handleError =
     JsonDecode   -> do
       bytes <- BS.readByteStore
       let
-        config :: Either String Aeson.Value
-        config = maybe (Right $ Aeson.toJSON initialConfig) Aeson.eitherDecode' bytes
+        config = maybe (Right initialConfig) Aeson.eitherDecode' bytes
       either handleError convertD config
 
-runGamgeeJSONStore :: Member (P.Error Text) r => Sem (JSONStore Token.Tokens : r) a -> Sem (BS.ByteStore : r) a
+runGamgeeJSONStore :: Member (P.Error Err.EffError) r => Sem (JSONStore Token.Tokens : r) a -> Sem (BS.ByteStore : r) a
 runGamgeeJSONStore = runJSONStore tokensToConfig jsonToTokens handleDecodeError
   where
     tokensToConfig :: Token.Tokens -> Sem r Config
     tokensToConfig ts = return $ Config { configVersion = currentConfigVersion, configTokens = ts }
 
-    jsonToTokens :: Member (P.Error Text) r => Aeson.Value -> Sem r Token.Tokens
-    jsonToTokens v =
-      case Aeson.parseEither Aeson.parseJSON v of
-        Left err  -> P.throw $ "Internal Error: Could not parse Gamgee config file: " <> fromString err
-        Right cfg -> if configVersion cfg == currentConfigVersion
-                     then return (configTokens cfg)
-                     else P.throw $ "Internal Error: Unsupported config version: " <> show (configVersion cfg)
+    jsonToTokens :: Member (P.Error Err.EffError) r => Config -> Sem r Token.Tokens
+    jsonToTokens cfg = if configVersion cfg == currentConfigVersion
+                       then return (configTokens cfg)
+                       else P.throw $ Err.UnsupportedConfigVersion $ configVersion cfg
 
-    handleDecodeError :: Member (P.Error Text) r => String -> Sem r a
-    handleDecodeError msg = P.throw $ "Internal Error: Could not decode Gamgee config file: " <> fromString msg
+    handleDecodeError :: Member (P.Error Err.EffError) r => String -> Sem r a
+    handleDecodeError msg = P.throw $ Err.JSONDecodeError $ toText msg
