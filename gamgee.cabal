@@ -31,8 +31,7 @@ executable gamgee
                , base >=4.12.0.0 && <4.13
                , relude >=0.5.0 && <0.6
                , optparse-applicative >=0.14.3.0 && <0.15
-               , polysemy >=0.5.0.1 && <0.6
-               , polysemy-plugin >=0.2.1.1 && <0.3
+               , polysemy >=0.7.0.0 && <0.8
                , safe-exceptions >=0.1.7.0 && <0.2
                , directory >=1.3.3.0 && <1.4
                , filepath >=1.4.2.1 && <1.5
@@ -42,7 +41,7 @@ executable gamgee
                , time >=1.8.0.2 && <1.9
                , Hclip >=3.0.0.4 && <3.1
   ghc-options: -Wall -Wcompat -Wredundant-constraints -Wincomplete-record-updates
-               -Wincomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N -fplugin=Polysemy.Plugin
+               -Wincomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N
   default-language: Haskell2010
 
 library
@@ -58,7 +57,7 @@ library
                    Gamgee.Effects.JSONStore
                    Gamgee.Effects.ByteStore
   ghc-options: -Wall -Wcompat -Wredundant-constraints -Wincomplete-record-updates
-               -Wincomplete-uni-patterns -fplugin=Polysemy.Plugin
+               -Wincomplete-uni-patterns
   build-depends: aeson >=1.4.4.0 && <1.5
                , base >=4.12.0.0 && <4.13
                , relude >=0.5.0 && <0.6
@@ -69,8 +68,7 @@ library
                , memory >=0.14.18 && <0.15
                , time >=1.8.0.2 && <1.9
                , safe-exceptions >=0.1.7.0 && <0.2
-               , polysemy >=0.5.0.1 && <0.6
-               , polysemy-plugin >=0.2.1.1 && <0.3
+               , polysemy >=0.7.0.0 && <0.8
   default-language: Haskell2010
 
 test-suite gamgee-test
@@ -93,11 +91,10 @@ test-suite gamgee-test
                , tasty-quickcheck >=0.10.1 && <0.11
                , QuickCheck >=2.13.1 && <2.14
                , quickcheck-instances >=0.3.21 && <0.4
-               , polysemy >=0.5.0.1 && <0.6
-               , polysemy-plugin >=0.2.1.1 && <0.3
+               , polysemy >=0.7.0.0 && <0.8
                , filepath >=1.4.2.1 && <1.5
                , cryptonite ==0.25.*
                , time >=1.8.0.2 && <1.9
   ghc-options: -Wall -Wcompat -Wredundant-constraints -Wincomplete-record-updates
-               -Wincomplete-uni-patterns -fplugin=Polysemy.Plugin
+               -Wincomplete-uni-patterns
   default-language: Haskell2010

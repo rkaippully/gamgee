@@ -40,13 +40,17 @@ import qualified System.Posix.Files     as Files
 runM_ :: Monad m => Sem '[Lift m] a -> m ()
 runM_ = void . P.runM
 
+sendIO :: Member (Lift IO) r => IO a -> Sem r a
+sendIO = P.sendM
+
+
 ----------------------------------------------------------------------------------------------------
 -- Interpret Output by writing it to stdout or clipboard
 ----------------------------------------------------------------------------------------------------
 
 runOutputStdOut :: Member (Lift IO) r => Sem (P.Output Text : r) a -> Sem r a
 runOutputStdOut = P.interpret $ \case
-  P.Output s -> P.sendM $ putTextLn s
+  P.Output s -> sendIO $ putTextLn s
 
 runOutputClipboard :: Member (Lift IO) r => Sem (P.Output Text : r) a -> Sem r a
 runOutputClipboard = P.interpret $ \case
@@ -99,10 +103,10 @@ runByteStoreFile :: ( Members [Lift IO, P.Error e] r
                  -> Sem r a
 runByteStoreFile file handleReadError handleWriteError = P.interpret $ \case
   Eff.ReadByteStore        -> do
-    res <- P.sendM $ (Right . Just <$> readFileLBS file) `catch` (return . handleReadError)
+    res <- sendIO $ (Right . Just <$> readFileLBS file) `catch` (return . handleReadError)
     either P.throw return res
   Eff.WriteByteStore bytes -> do
-    res <- P.sendM $ (writeFileLBS file bytes $> Nothing) `catch` (return . handleWriteError)
+    res <- sendIO $ (writeFileLBS file bytes $> Nothing) `catch` (return . handleWriteError)
     whenJust res P.throw
     P.sendM $ Files.setFileMode file $ Files.ownerReadMode `Files.unionFileModes` Files.ownerWriteMode
 

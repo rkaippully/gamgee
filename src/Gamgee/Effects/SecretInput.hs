@@ -38,7 +38,7 @@ import qualified System.IO              as IO
 -- appropriately. For example, an IO interpretation may chose not to
 -- echo the input to the console.
 data SecretInput i m a where
-  -- ^ Retrieve a secret input
+  -- | Retrieve a secret input
   SecretInput :: Text              -- ^ A prompt
               -> SecretInput i m i
 

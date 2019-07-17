@@ -84,19 +84,19 @@ newtype TokenPeriod = TokenPeriod {
   deriving newtype (Eq, Ord, Enum, Num, Real, Integral, Show, Aeson.FromJSON, Aeson.ToJSON)
 
 data TokenSpec = TokenSpec {
-  -- ^ TOTP/HOTP token
+  -- | TOTP/HOTP token
   tokenType        :: TokenType
-  -- ^ A short unique label for this token used to identify it
+  -- | A short unique label for this token used to identify it
   , tokenLabel     :: TokenLabel
-  -- ^ The secret provided by the issuer to generate tokens
+  -- | The secret provided by the issuer to generate tokens
   , tokenSecret    :: TokenSecret
-  -- ^ The name of the issuer
+  -- | The name of the issuer
   , tokenIssuer    :: TokenIssuer
-  -- ^ SHA algorithm used to generate tokens
+  -- | SHA algorithm used to generate tokens
   , tokenAlgorithm :: TokenAlgorithm
-  -- ^ Number of digits in the token - 6 or 8
+  -- | Number of digits in the token - 6 or 8
   , tokenDigits    :: TokenDigits
-  -- ^ Refresh interval of the token - typically 30 sec
+  -- | Refresh interval of the token - typically 30 sec
   , tokenPeriod    :: TokenPeriod
   }
   deriving stock    (Generic, Show)

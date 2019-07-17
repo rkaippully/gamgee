@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE GADTs             #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module Gamgee.Operation
@@ -13,13 +14,16 @@ module Gamgee.Operation
 import qualified Data.Time.Clock.POSIX as Clock
 import qualified Gamgee.Effects        as Eff
 import qualified Gamgee.Token          as Token
-import           Polysemy              (Members, Sem)
+import           Polysemy              (Member, Members, Sem)
 import qualified Polysemy.Error        as P
 import qualified Polysemy.Output       as P
 import qualified Polysemy.State        as P
 import           Relude
 import qualified Relude.Extra.Map      as Map
 
+
+getTokens :: Member (P.State Token.Tokens) r => Sem r Token.Tokens
+getTokens = P.get
 
 addToken :: Members [ P.State Token.Tokens
                     , Eff.Crypto
@@ -29,7 +33,7 @@ addToken :: Members [ P.State Token.Tokens
          -> Sem r ()
 addToken spec = do
   let ident = Token.getIdentifier spec
-  tokens <- P.get
+  tokens <- getTokens
   if ident `Map.member` tokens
   then P.throw $ Eff.AlreadyExists ident
   else do
@@ -41,7 +45,7 @@ deleteToken :: Members [ P.State Token.Tokens
             => Token.TokenIdentifier
             -> Sem r ()
 deleteToken ident = do
-  tokens <- P.get
+  tokens <- getTokens
   case Map.lookup ident tokens of
     Nothing -> P.throw $ Eff.NoSuchToken ident
     Just _  -> P.put $ Map.delete ident tokens
@@ -50,8 +54,8 @@ listTokens :: Members [ P.State Token.Tokens
                       , P.Output Text ] r
            => Sem r ()
 listTokens = do
-  tokens <- P.get
-  mapM_ (P.output . Token.unTokenIdentifier . Token.getIdentifier) (tokens :: Token.Tokens)
+  tokens <- getTokens
+  mapM_ (P.output . Token.unTokenIdentifier . Token.getIdentifier) tokens
 
 getOTP :: Members [ P.State Token.Tokens
                   , P.Error Eff.EffError
@@ -61,7 +65,7 @@ getOTP :: Members [ P.State Token.Tokens
        -> Clock.POSIXTime
        -> Sem r ()
 getOTP ident time = do
-  tokens <- P.get
+  tokens <- getTokens
   case Map.lookup ident tokens of
     Nothing   -> P.throw $ Eff.NoSuchToken ident
     Just spec -> Eff.getTOTP spec time >>= P.output

@@ -7,6 +7,7 @@
 {-# LANGUAGE PolyKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE TypeOperators       #-}
 
 module Gamgee.Effects.CryptoRandom
@@ -33,7 +34,7 @@ import           Relude
 
 -- | An effect capable of providing random bytes for use with cryptonite
 data CryptoRandom m a where
-  -- ^ Generate random bytes
+  -- | Generate random bytes
   RandomBytes :: BA.ByteArray b => Int -> CryptoRandom m b
 
 P.makeSem ''CryptoRandom
@@ -45,4 +46,4 @@ P.makeSem ''CryptoRandom
 
 runCryptoRandomIO :: Member (Lift IO) r => Sem (CryptoRandom : r) a -> Sem r a
 runCryptoRandomIO = P.interpret $ \case
-  RandomBytes count -> P.sendM $ CRT.getRandomBytes count
+  RandomBytes count -> P.sendM @IO $ CRT.getRandomBytes count
