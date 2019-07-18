@@ -1,8 +1,3 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE GADTs             #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Gamgee.Operation
   ( addToken
   , deleteToken

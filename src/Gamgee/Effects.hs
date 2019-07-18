@@ -1,8 +1,3 @@
-{-# LANGUAGE DataKinds     #-}
-{-# LANGUAGE GADTs         #-}
-{-# LANGUAGE LambdaCase    #-}
-{-# LANGUAGE TypeOperators #-}
-
 module Gamgee.Effects
   ( module Gamgee.Effects.Crypto
   , module Gamgee.Effects.CryptoRandom
@@ -25,6 +20,7 @@ import           Gamgee.Effects.TOTP
 import           Polysemy                    (Sem)
 import qualified Polysemy                    as P
 import qualified Polysemy.State              as P
+import           Relude
 
 
 ----------------------------------------------------------------------------------------------------

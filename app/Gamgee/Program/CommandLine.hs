@@ -1,7 +1,3 @@
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE NoImplicitPrelude  #-}
-{-# LANGUAGE OverloadedStrings  #-}
-
 -- | Command line argument parsing
 module Gamgee.Program.CommandLine
     ( Command (..)
