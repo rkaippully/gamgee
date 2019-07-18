@@ -51,8 +51,10 @@ before_install:
   if [ `uname` = "Darwin" ]
   then
     travis_retry curl --insecure -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
+    brew install dhall-json
   else
     travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+    travis_retry curl -L https://github.com/dhall-lang/dhall-haskell/releases/download/1.24.0/dhall-json-1.3.0-x86_64-linux.tar.bz2 | tar xj -C ~/.local
   fi
 
   # Use the more reliable S3 mirror of Hackage
@@ -65,6 +67,12 @@ install:
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
 - |
   set -ex
+
+  # Generate config files via dhall
+  echo "./dhall/package.dhall" | dhall-to-yaml > package.yaml
+  echo "./dhall/hlint.dhall" | dhall-to-yaml --omitNull > .hlint.yaml
+  echo "./dhall/stylish-haskell.dhall" | dhall-to-yaml > .stylish-haskell.yaml
+
   case "$BUILD" in
     stack)
       # Build the dependencies

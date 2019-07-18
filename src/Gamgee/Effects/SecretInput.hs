@@ -1,14 +1,3 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE NoImplicitPrelude   #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE PolyKinds           #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
-{-# LANGUAGE TypeOperators       #-}
-
 module Gamgee.Effects.SecretInput
     ( -- * Effect
       SecretInput(..)
@@ -25,7 +14,6 @@ import           Polysemy               (Lift, Member, Sem)
 import qualified Polysemy               as P
 import           Relude
 import qualified System.IO              as IO
-
 
 
 ----------------------------------------------------------------------------------------------------

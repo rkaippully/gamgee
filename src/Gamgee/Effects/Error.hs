@@ -1,6 +1,3 @@
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE NoImplicitPrelude  #-}
-
 module Gamgee.Effects.Error
   ( EffError(..)
   ) where

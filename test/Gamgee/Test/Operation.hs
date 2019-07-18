@@ -1,6 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE RankNTypes        #-}
-
 module Gamgee.Test.Operation
   ( OutputMessage
   , runTest
