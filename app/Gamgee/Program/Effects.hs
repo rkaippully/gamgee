@@ -2,10 +2,12 @@
 
 module Gamgee.Program.Effects
   ( runM_
-  , runGamgeeByteStoreIO
+  , runByteStoreIO
   , runOutputStdOut
   , runOutputClipboard
   , runErrorStdErr
+  , configFilePath
+  , ByteStoreError(..)
   ) where
 
 import           Control.Exception.Safe (catch)
@@ -98,10 +100,10 @@ runByteStoreFile file handleReadError handleWriteError = P.interpret $ \case
     whenJust res P.throw
     P.sendM $ Files.setFileMode file $ Files.ownerReadMode `Files.unionFileModes` Files.ownerWriteMode
 
-runGamgeeByteStoreIO :: Members [Lift IO, P.Error ByteStoreError] r
-                     => Sem (Eff.ByteStore : r) a
-                     -> Sem r a
-runGamgeeByteStoreIO prog = do
+runByteStoreIO :: Members [Lift IO, P.Error ByteStoreError] r
+               => Sem (Eff.ByteStore : r) a
+               -> Sem r a
+runByteStoreIO prog = do
   file <- P.sendM configFilePath
   runByteStoreFile file handleReadError handleWriteError prog
 

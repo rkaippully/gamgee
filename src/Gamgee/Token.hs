@@ -10,7 +10,10 @@ module Gamgee.Token
     , TokenSpec (..)
     , TokenIdentifier (..)
     , Tokens
+    , Config(..)
     , getIdentifier
+    , currentConfigVersion
+    , initialConfig
     ) where
 
 import qualified Data.Aeson as Aeson
@@ -113,3 +116,23 @@ getIdentifier spec =
                          | otherwise                             -> issuer <> ":" <> label
 
 type Tokens = HashMap TokenIdentifier TokenSpec
+
+----------------------------------------------------------------------------------------------------
+-- Gamgee Configuration
+----------------------------------------------------------------------------------------------------
+
+data Config = Config {
+  configVersion  :: Word32
+  , configTokens :: Tokens
+  }
+  deriving stock    (Generic)
+  deriving anyclass (Aeson.FromJSON, Aeson.ToJSON)
+
+currentConfigVersion :: Word32
+currentConfigVersion = 1
+
+initialConfig :: Config
+initialConfig = Config {
+  configVersion = currentConfigVersion
+  , configTokens = fromList []
+  }
