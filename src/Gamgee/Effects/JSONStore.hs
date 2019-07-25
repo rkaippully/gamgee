@@ -1,17 +1,3 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE DeriveAnyClass      #-}
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE DerivingStrategies  #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE NoImplicitPrelude   #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE PolyKinds           #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
-{-# LANGUAGE TypeOperators       #-}
-
 module Gamgee.Effects.JSONStore
   ( -- * Effect
     JSONStore (..)
@@ -20,8 +6,9 @@ module Gamgee.Effects.JSONStore
   , jsonEncode
   , jsonDecode
 
-    -- * Interpretation
-  , runGamgeeJSONStore
+    -- * Interpretations
+  , runJSONStore
+  , configStoreToByteStore
   ) where
 
 import qualified Data.Aeson               as Aeson
@@ -47,56 +34,44 @@ P.makeSem ''JSONStore
 
 
 ----------------------------------------------------------------------------------------------------
--- Gamgee Configuration
-----------------------------------------------------------------------------------------------------
-
-data Config = Config {
-  configVersion  :: Word32
-  , configTokens :: Token.Tokens
-  }
-  deriving stock    (Generic)
-  deriving anyclass (Aeson.FromJSON, Aeson.ToJSON)
-
-currentConfigVersion :: Word32
-currentConfigVersion = 1
-
-initialConfig :: Config
-initialConfig = Config {
-  configVersion = currentConfigVersion
-  , configTokens = fromList []
-  }
-
-
-----------------------------------------------------------------------------------------------------
 -- Interpret JSONStore backed by a ByteStore
 ----------------------------------------------------------------------------------------------------
 
-runJSONStore :: (o -> Sem (BS.ByteStore : r) Config) -- ^ Function to map object to a JSON serializable value
-             -> (Config -> Sem (BS.ByteStore : r) o) -- ^ Function to map a JSON value to the object
-             -> (String -> Sem (BS.ByteStore : r) o) -- ^ Function to handle errors in decoding
-             -> Sem (JSONStore o : r) a
+-- | Reinterprets a JSONStore as a ByteStore
+runJSONStore :: Member (P.Error Err.EffError) r
+             => Sem (JSONStore Token.Tokens : r) a
              -> Sem (BS.ByteStore : r) a
-runJSONStore convertE convertD handleError =
+runJSONStore = configStoreToByteStore . tokenStoreToConfigStore
+
+tokenStoreToConfigStore :: Member (P.Error Err.EffError) r
+                        => Sem (JSONStore Token.Tokens : r) a
+                        -> Sem (JSONStore Token.Config : r) a
+tokenStoreToConfigStore =
   P.reinterpret $ \case
-    JsonEncode o -> do
-      j <- convertE o
-      BS.writeByteStore $ Aeson.encode j
-    JsonDecode   -> do
+    JsonEncode o -> tokensToConfig o >>= jsonEncode
+    JsonDecode   -> jsonDecode >>= configToTokens
+
+  where
+    tokensToConfig :: Token.Tokens -> Sem r Token.Config
+    tokensToConfig ts = return $ Token.Config { Token.configVersion = Token.currentConfigVersion, Token.configTokens = ts }
+
+    configToTokens :: Member (P.Error Err.EffError) r => Token.Config -> Sem r Token.Tokens
+    configToTokens cfg = if Token.configVersion cfg == Token.currentConfigVersion
+                         then return (Token.configTokens cfg)
+                         else P.throw $ Err.UnsupportedConfigVersion $ Token.configVersion cfg
+
+configStoreToByteStore :: Member (P.Error Err.EffError) r
+                       => Sem (JSONStore Token.Config : r) a
+                       -> Sem (BS.ByteStore : r) a
+configStoreToByteStore =
+  P.reinterpret $ \case
+    JsonEncode cfg -> BS.writeByteStore $ Aeson.encode cfg
+    JsonDecode     -> do
       bytes <- BS.readByteStore
       let
-        config = maybe (Right initialConfig) Aeson.eitherDecode' bytes
-      either handleError convertD config
+        cfg = maybe (Right Token.initialConfig) Aeson.eitherDecode' bytes
+      either handleDecodeError return cfg
 
-runGamgeeJSONStore :: Member (P.Error Err.EffError) r => Sem (JSONStore Token.Tokens : r) a -> Sem (BS.ByteStore : r) a
-runGamgeeJSONStore = runJSONStore tokensToConfig jsonToTokens handleDecodeError
   where
-    tokensToConfig :: Token.Tokens -> Sem r Config
-    tokensToConfig ts = return $ Config { configVersion = currentConfigVersion, configTokens = ts }
-
-    jsonToTokens :: Member (P.Error Err.EffError) r => Config -> Sem r Token.Tokens
-    jsonToTokens cfg = if configVersion cfg == currentConfigVersion
-                       then return (configTokens cfg)
-                       else P.throw $ Err.UnsupportedConfigVersion $ configVersion cfg
-
     handleDecodeError :: Member (P.Error Err.EffError) r => String -> Sem r a
     handleDecodeError msg = P.throw $ Err.JSONDecodeError $ toText msg

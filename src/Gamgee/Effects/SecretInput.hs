@@ -1,14 +1,3 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE NoImplicitPrelude   #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE PolyKinds           #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
-{-# LANGUAGE TypeOperators       #-}
-
 module Gamgee.Effects.SecretInput
     ( -- * Effect
       SecretInput(..)
@@ -27,7 +16,6 @@ import           Relude
 import qualified System.IO              as IO
 
 
-
 ----------------------------------------------------------------------------------------------------
 -- Effect
 ----------------------------------------------------------------------------------------------------
@@ -38,7 +26,7 @@ import qualified System.IO              as IO
 -- appropriately. For example, an IO interpretation may chose not to
 -- echo the input to the console.
 data SecretInput i m a where
-  -- ^ Retrieve a secret input
+  -- | Retrieve a secret input
   SecretInput :: Text              -- ^ A prompt
               -> SecretInput i m i
 

@@ -13,7 +13,7 @@ packages:
     hackage: Hclip-3.0.0.4
 snapshots:
 - completed:
-    size: 513872
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2019/6/28.yaml
-    sha256: 60d99bc77de2ab71baaf7114873210155f84e8ae78350f113a1e6307a6b1995c
-  original: nightly-2019-06-28
+    size: 519771
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2019/7/16.yaml
+    sha256: 9aaf6881f984872e0b5ef83a5ca542ce47ddcec5da020d34055a775e610e01b3
+  original: nightly-2019-07-16

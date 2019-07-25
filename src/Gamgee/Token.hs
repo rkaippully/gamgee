@@ -1,11 +1,3 @@
-{-# LANGUAGE DeriveAnyClass             #-}
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE DerivingStrategies         #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiWayIf                 #-}
-{-# LANGUAGE NoImplicitPrelude          #-}
-{-# LANGUAGE OverloadedStrings          #-}
-
 -- | Data structures to define and manipulate tokens
 module Gamgee.Token
     ( TokenType (..)
@@ -18,7 +10,10 @@ module Gamgee.Token
     , TokenSpec (..)
     , TokenIdentifier (..)
     , Tokens
+    , Config(..)
     , getIdentifier
+    , currentConfigVersion
+    , initialConfig
     ) where
 
 import qualified Data.Aeson as Aeson
@@ -84,19 +79,19 @@ newtype TokenPeriod = TokenPeriod {
   deriving newtype (Eq, Ord, Enum, Num, Real, Integral, Show, Aeson.FromJSON, Aeson.ToJSON)
 
 data TokenSpec = TokenSpec {
-  -- ^ TOTP/HOTP token
+  -- | TOTP/HOTP token
   tokenType        :: TokenType
-  -- ^ A short unique label for this token used to identify it
+  -- | A short unique label for this token used to identify it
   , tokenLabel     :: TokenLabel
-  -- ^ The secret provided by the issuer to generate tokens
+  -- | The secret provided by the issuer to generate tokens
   , tokenSecret    :: TokenSecret
-  -- ^ The name of the issuer
+  -- | The name of the issuer
   , tokenIssuer    :: TokenIssuer
-  -- ^ SHA algorithm used to generate tokens
+  -- | SHA algorithm used to generate tokens
   , tokenAlgorithm :: TokenAlgorithm
-  -- ^ Number of digits in the token - 6 or 8
+  -- | Number of digits in the token - 6 or 8
   , tokenDigits    :: TokenDigits
-  -- ^ Refresh interval of the token - typically 30 sec
+  -- | Refresh interval of the token - typically 30 sec
   , tokenPeriod    :: TokenPeriod
   }
   deriving stock    (Generic, Show)
@@ -121,3 +116,23 @@ getIdentifier spec =
                          | otherwise                             -> issuer <> ":" <> label
 
 type Tokens = HashMap TokenIdentifier TokenSpec
+
+----------------------------------------------------------------------------------------------------
+-- Gamgee Configuration
+----------------------------------------------------------------------------------------------------
+
+data Config = Config {
+  configVersion  :: Word32
+  , configTokens :: Tokens
+  }
+  deriving stock    (Generic)
+  deriving anyclass (Aeson.FromJSON, Aeson.ToJSON)
+
+currentConfigVersion :: Word32
+currentConfigVersion = 1
+
+initialConfig :: Config
+initialConfig = Config {
+  configVersion = currentConfigVersion
+  , configTokens = fromList []
+  }

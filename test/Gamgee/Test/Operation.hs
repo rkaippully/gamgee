@@ -1,6 +1,3 @@
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE RankNTypes        #-}
-
 module Gamgee.Test.Operation
   ( OutputMessage
   , runTest
@@ -46,7 +43,7 @@ addToken drg store input spec = P.runM
                                 $ Eff.runCrypto
                                 $ Eff.runListSecretInput input
                                 $ Eff.runByteStoreST store
-                                $ Eff.runGamgeeJSONStore
+                                $ Eff.runJSONStore
                                 $ Eff.runStateJSON
                                 $ Operation.addToken spec
 
@@ -54,7 +51,7 @@ deleteToken :: TestStore s -> Token.TokenIdentifier -> ST s (Either Eff.EffError
 deleteToken store t = P.runM
                       $ P.runError
                       $ Eff.runByteStoreST store
-                      $ Eff.runGamgeeJSONStore
+                      $ Eff.runJSONStore
                       $ Eff.runStateJSON
                       $ Operation.deleteToken t
 
@@ -64,7 +61,7 @@ listTokens store = fmap fst
                        (P.runError
                         $ Eff.runOutputPure
                         $ Eff.runByteStoreST store
-                        $ Eff.runGamgeeJSONStore
+                        $ Eff.runJSONStore
                         $ Eff.runStateJSON Operation.listTokens)
 
 getOTP :: CR.DRG gen
@@ -83,7 +80,7 @@ getOTP drg store input tok time =
        $ Eff.runCrypto
        $ Eff.runListSecretInput input
        $ Eff.runByteStoreST store
-       $ Eff.runGamgeeJSONStore
+       $ Eff.runJSONStore
        $ Eff.runStateJSON
        $ Eff.runTOTP
        $ Operation.getOTP tok time)

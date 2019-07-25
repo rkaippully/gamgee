@@ -1,23 +1,13 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE DerivingStrategies  #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE NoImplicitPrelude   #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE PolyKinds           #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TypeOperators       #-}
-
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Gamgee.Program.Effects
   ( runM_
-  , runGamgeeByteStoreIO
+  , runByteStoreIO
   , runOutputStdOut
   , runOutputClipboard
   , runErrorStdErr
+  , configFilePath
+  , ByteStoreError(..)
   ) where
 
 import           Control.Exception.Safe (catch)
@@ -40,13 +30,17 @@ import qualified System.Posix.Files     as Files
 runM_ :: Monad m => Sem '[Lift m] a -> m ()
 runM_ = void . P.runM
 
+sendIO :: Member (Lift IO) r => IO a -> Sem r a
+sendIO = P.sendM
+
+
 ----------------------------------------------------------------------------------------------------
 -- Interpret Output by writing it to stdout or clipboard
 ----------------------------------------------------------------------------------------------------
 
 runOutputStdOut :: Member (Lift IO) r => Sem (P.Output Text : r) a -> Sem r a
 runOutputStdOut = P.interpret $ \case
-  P.Output s -> P.sendM $ putTextLn s
+  P.Output s -> sendIO $ putTextLn s
 
 runOutputClipboard :: Member (Lift IO) r => Sem (P.Output Text : r) a -> Sem r a
 runOutputClipboard = P.interpret $ \case
@@ -99,17 +93,17 @@ runByteStoreFile :: ( Members [Lift IO, P.Error e] r
                  -> Sem r a
 runByteStoreFile file handleReadError handleWriteError = P.interpret $ \case
   Eff.ReadByteStore        -> do
-    res <- P.sendM $ (Right . Just <$> readFileLBS file) `catch` (return . handleReadError)
+    res <- sendIO $ (Right . Just <$> readFileLBS file) `catch` (return . handleReadError)
     either P.throw return res
   Eff.WriteByteStore bytes -> do
-    res <- P.sendM $ (writeFileLBS file bytes $> Nothing) `catch` (return . handleWriteError)
+    res <- sendIO $ (writeFileLBS file bytes $> Nothing) `catch` (return . handleWriteError)
     whenJust res P.throw
     P.sendM $ Files.setFileMode file $ Files.ownerReadMode `Files.unionFileModes` Files.ownerWriteMode
 
-runGamgeeByteStoreIO :: Members [Lift IO, P.Error ByteStoreError] r
-                     => Sem (Eff.ByteStore : r) a
-                     -> Sem r a
-runGamgeeByteStoreIO prog = do
+runByteStoreIO :: Members [Lift IO, P.Error ByteStoreError] r
+               => Sem (Eff.ByteStore : r) a
+               -> Sem r a
+runByteStoreIO prog = do
   file <- P.sendM configFilePath
   runByteStoreFile file handleReadError handleWriteError prog
 
