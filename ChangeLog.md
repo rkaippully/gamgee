@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2019-07-25
+- Added an info command to get information about Gamgee installation (https://github.com/rkaippully/gamgee/issues/5)
+- Generate build/configuration files via dhall
+- Remove polysemy-plugin so that haddock will run :(
+- Updated to latest stackage nightly
+- Upgraded to latest version of polysemy
+
 ## [1.0.0] - 2019-07-16
 - Major reimplementation based on polysemy
 

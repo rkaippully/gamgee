@@ -71,6 +71,14 @@ that this cannot be undone:
 gamgee delete -l "<token-label>"
 ```
 
+Polysemy stores the tokens in a configuration file under your home
+directory. You can find the location of this file (along with some
+other details) by running:
+
+```
+gamgee info
+```
+
 # License
 Gamgee is distributed under Mozilla Public License 2.0. See the file
 LICENSE for details.

@@ -4,7 +4,7 @@
 
 let package-info =
     { name               = "gamgee"
-    , version            = "1.0.0"
+    , version            = "1.1.0"
     , synopsis           = "Tool for generating TOTP MFA tokens."
     , description        = "Tool for generating TOTP MFA tokens. Please see the README on GitHub at <https://github.com/rkaippully/gamgee#readme>"
     , category           = "Authentication, Command Line"
