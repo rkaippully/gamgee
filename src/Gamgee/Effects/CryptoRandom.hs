@@ -11,7 +11,7 @@ module Gamgee.Effects.CryptoRandom
 
 import qualified Crypto.Random.Types as CRT
 import qualified Data.ByteArray      as BA
-import           Polysemy            (Lift, Member, Sem)
+import           Polysemy            (Embed, Member, Sem)
 import qualified Polysemy            as P
 import           Relude
 
@@ -32,6 +32,6 @@ P.makeSem ''CryptoRandom
 -- Interpretations
 ----------------------------------------------------------------------------------------------------
 
-runCryptoRandomIO :: Member (Lift IO) r => Sem (CryptoRandom : r) a -> Sem r a
+runCryptoRandomIO :: Member (Embed IO) r => Sem (CryptoRandom : r) a -> Sem r a
 runCryptoRandomIO = P.interpret $ \case
-  RandomBytes count -> P.sendM @IO $ CRT.getRandomBytes count
+  RandomBytes count -> P.embed @IO $ CRT.getRandomBytes count

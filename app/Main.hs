@@ -8,12 +8,13 @@ import qualified Gamgee.Program.CommandLine as Cmd
 import qualified Gamgee.Program.Effects     as Eff
 import qualified Gamgee.Token               as Token
 import qualified Options.Applicative        as Options
-import           Polysemy                   (Lift, Member, Sem)
+import           Polysemy                   (Embed, Member, Sem)
 import qualified Polysemy                   as P
 import qualified Polysemy.Error             as P
 import qualified Polysemy.Input             as P
 import qualified Polysemy.Output            as P
 import           Relude
+
 
 main :: IO ()
 main = do
@@ -72,7 +73,7 @@ runGetOTP t o = do
     $ Eff.runTOTP
     $ Operation.getOTP t now
 
-getConfig :: Member (Lift IO) r => Sem r (Maybe Token.Config)
+getConfig :: Member (Embed IO) r => Sem r (Maybe Token.Config)
 getConfig = do
   res <- fmap (rightToMaybe @Eff.EffError)
          $ P.runError
@@ -86,7 +87,7 @@ runGetInfo :: IO ()
 runGetInfo = do
   path <- Eff.configFilePath
   res <- P.runM
-         $ P.runFoldMapOutput (decodeUtf8 . Aeson.encode @Aeson.Value)
-         $ P.runConstInput path
+         $ P.runOutputMonoid (decodeUtf8 . Aeson.encode @Aeson.Value)
+         $ P.runInputConst path
          $ Operation.getInfo getConfig
   putTextLn $ fst res

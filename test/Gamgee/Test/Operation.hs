@@ -18,6 +18,7 @@ import qualified Gamgee.Test.Effects   as Eff
 import qualified Gamgee.Token          as Token
 import qualified Polysemy              as P
 import qualified Polysemy.Error        as P
+import qualified Polysemy.Output       as P
 import           Relude
 
 
@@ -59,7 +60,7 @@ listTokens :: TestStore s -> ST s (Either Eff.EffError [OutputMessage])
 listTokens store = fmap fst
                    <$> P.runM
                        (P.runError
-                        $ Eff.runOutputPure
+                        $ P.runOutputList
                         $ Eff.runByteStoreST store
                         $ Eff.runJSONStore
                         $ Eff.runStateJSON Operation.listTokens)
@@ -75,7 +76,7 @@ getOTP drg store input tok time =
   fmap fst
   <$> P.runM
       (P.runError
-       $ Eff.runOutputPure
+       $ P.runOutputList
        $ Eff.runCryptoRandom drg
        $ Eff.runCrypto
        $ Eff.runListSecretInput input

@@ -14,7 +14,7 @@ import           Control.Exception.Safe (catch)
 import qualified Data.Text.IO           as TIO
 import qualified Gamgee.Effects         as Eff
 import qualified Gamgee.Token           as Token
-import           Polysemy               (Lift, Member, Members, Sem)
+import           Polysemy               (Embed, Member, Members, Sem)
 import qualified Polysemy               as P
 import qualified Polysemy.Error         as P
 import qualified Polysemy.Output        as P
@@ -27,24 +27,21 @@ import qualified System.Posix.Files     as Files
 
 
 -- | A version of runM that ignores its result
-runM_ :: Monad m => Sem '[Lift m] a -> m ()
+runM_ :: Monad m => Sem '[Embed m] a -> m ()
 runM_ = void . P.runM
-
-sendIO :: Member (Lift IO) r => IO a -> Sem r a
-sendIO = P.sendM
 
 
 ----------------------------------------------------------------------------------------------------
 -- Interpret Output by writing it to stdout or clipboard
 ----------------------------------------------------------------------------------------------------
 
-runOutputStdOut :: Member (Lift IO) r => Sem (P.Output Text : r) a -> Sem r a
+runOutputStdOut :: Member (Embed IO) r => Sem (P.Output Text : r) a -> Sem r a
 runOutputStdOut = P.interpret $ \case
-  P.Output s -> sendIO $ putTextLn s
+  P.Output s -> P.embed @IO $ putTextLn s
 
-runOutputClipboard :: Member (Lift IO) r => Sem (P.Output Text : r) a -> Sem r a
+runOutputClipboard :: Member (Embed IO) r => Sem (P.Output Text : r) a -> Sem r a
 runOutputClipboard = P.interpret $ \case
-  P.Output s -> P.sendM $ Clip.setClipboard $ toString s
+  P.Output s -> P.embed $ Clip.setClipboard $ toString s
 
 
 ----------------------------------------------------------------------------------------------------
@@ -69,21 +66,21 @@ instance ToText ByteStoreError where
   toText (ReadError e)  = "Internal Error: Error reading configuration file: " <> show e
   toText (WriteError e) = "Internal Error: Error saving configuration file: " <> show e
 
-runErrorStdErr :: Member (Lift IO) r => Sem (P.Error Eff.EffError : P.Error ByteStoreError : r) a -> Sem r (Maybe a)
+runErrorStdErr :: Member (Embed IO) r => Sem (P.Error Eff.EffError : P.Error ByteStoreError : r) a -> Sem r (Maybe a)
 runErrorStdErr = fmap join . runToTextError . runToTextError
 
-runToTextError :: (Member (Lift IO) r, ToText e) => Sem (P.Error e : r) a -> Sem r (Maybe a)
+runToTextError :: (Member (Embed IO) r, ToText e) => Sem (P.Error e : r) a -> Sem r (Maybe a)
 runToTextError a = P.runError a >>= either (printError . toText) (return . Just)
   where
-    printError :: Member (Lift IO) r => Text -> Sem r (Maybe a)
-    printError msg = P.sendM (TIO.hPutStrLn stderr msg) $> Nothing
+    printError :: Member (Embed IO) r => Text -> Sem r (Maybe a)
+    printError msg = P.embed (TIO.hPutStrLn stderr msg) $> Nothing
 
 
 ----------------------------------------------------------------------------------------------------
 -- Interpret ByteStore using a file
 ----------------------------------------------------------------------------------------------------
 
-runByteStoreFile :: ( Members [Lift IO, P.Error e] r
+runByteStoreFile :: ( Members [Embed IO, P.Error e] r
                     , Exception e1
                     , Exception e2)
                  => FilePath
@@ -93,18 +90,18 @@ runByteStoreFile :: ( Members [Lift IO, P.Error e] r
                  -> Sem r a
 runByteStoreFile file handleReadError handleWriteError = P.interpret $ \case
   Eff.ReadByteStore        -> do
-    res <- sendIO $ (Right . Just <$> readFileLBS file) `catch` (return . handleReadError)
+    res <- P.embed @IO $ (Right . Just <$> readFileLBS file) `catch` (return . handleReadError)
     either P.throw return res
   Eff.WriteByteStore bytes -> do
-    res <- sendIO $ (writeFileLBS file bytes $> Nothing) `catch` (return . handleWriteError)
+    res <- P.embed @IO $ (writeFileLBS file bytes $> Nothing) `catch` (return . handleWriteError)
     whenJust res P.throw
-    P.sendM $ Files.setFileMode file $ Files.ownerReadMode `Files.unionFileModes` Files.ownerWriteMode
+    P.embed $ Files.setFileMode file $ Files.ownerReadMode `Files.unionFileModes` Files.ownerWriteMode
 
-runByteStoreIO :: Members [Lift IO, P.Error ByteStoreError] r
+runByteStoreIO :: Members [Embed IO, P.Error ByteStoreError] r
                => Sem (Eff.ByteStore : r) a
                -> Sem r a
 runByteStoreIO prog = do
-  file <- P.sendM configFilePath
+  file <- P.embed configFilePath
   runByteStoreFile file handleReadError handleWriteError prog
 
   where

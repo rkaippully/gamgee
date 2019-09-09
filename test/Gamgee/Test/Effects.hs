@@ -1,6 +1,5 @@
 module Gamgee.Test.Effects
-  ( runOutputPure
-  , runListSecretInput
+  ( runListSecretInput
   , runCryptoRandom
   , runByteStoreST
   ) where
@@ -11,19 +10,10 @@ import qualified Crypto.Random.Types as CRT
 import           Data.STRef          (STRef)
 import qualified Data.STRef          as STRef
 import qualified Gamgee.Effects      as Eff
-import           Polysemy            (Lift, Member, Sem)
+import           Polysemy            (Embed, Member, Sem)
 import qualified Polysemy            as P
-import qualified Polysemy.Output     as P
 import qualified Polysemy.State      as P
 import           Relude
-
-
-----------------------------------------------------------------------------------------------------
--- Interpret Output by accumulating it in a list
-----------------------------------------------------------------------------------------------------
-
-runOutputPure :: Sem (P.Output o : r) a -> Sem r ([o], a)
-runOutputPure = P.runFoldMapOutput one
 
 
 ----------------------------------------------------------------------------------------------------
@@ -56,7 +46,7 @@ runCryptoRandom gen = P.interpret $ \case
 -- Interpret ByteStore using the ST monad
 ----------------------------------------------------------------------------------------------------
 
-runByteStoreST :: Member (Lift (ST s)) r => STRef s (Maybe LByteString) -> Sem (Eff.ByteStore : r) a -> Sem r a
+runByteStoreST :: Member (Embed (ST s)) r => STRef s (Maybe LByteString) -> Sem (Eff.ByteStore : r) a -> Sem r a
 runByteStoreST ref = P.interpret $ \case
-  Eff.ReadByteStore        -> P.sendM $ STRef.readSTRef ref
-  Eff.WriteByteStore bytes -> P.sendM $ STRef.writeSTRef ref (Just bytes)
+  Eff.ReadByteStore        -> P.embed $ STRef.readSTRef ref
+  Eff.WriteByteStore bytes -> P.embed $ STRef.writeSTRef ref (Just bytes)
