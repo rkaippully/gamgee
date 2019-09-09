@@ -10,7 +10,7 @@ module Gamgee.Effects.SecretInput
     ) where
 
 import           Control.Exception.Safe (bracket_)
-import           Polysemy               (Lift, Member, Sem)
+import           Polysemy               (Embed, Member, Sem)
 import qualified Polysemy               as P
 import           Relude
 import qualified System.IO              as IO
@@ -37,9 +37,9 @@ P.makeSem ''SecretInput
 -- Interpretations
 ----------------------------------------------------------------------------------------------------
 
-runSecretInputIO :: (Member (Lift IO) r) => Sem (SecretInput Text : r) a -> Sem r a
+runSecretInputIO :: (Member (Embed IO) r) => Sem (SecretInput Text : r) a -> Sem r a
 runSecretInputIO = P.interpret $ \case
-  SecretInput prompt -> P.sendM $ do
+  SecretInput prompt -> P.embed $ do
     putText prompt
     IO.hFlush stdout
     i <- withoutEcho getLine

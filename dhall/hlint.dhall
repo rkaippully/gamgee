@@ -1,4 +1,4 @@
-let Prelude/List/map = https://raw.githubusercontent.com/dhall-lang/dhall-lang/master/Prelude/List/map
+let Prelude/List/map = https://raw.githubusercontent.com/dhall-lang/dhall-lang/v9.0.0/Prelude/List/map
 
 let Rule = ./hlint/rule.dhall
 
