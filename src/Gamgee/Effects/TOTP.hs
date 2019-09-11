@@ -3,6 +3,7 @@ module Gamgee.Effects.TOTP
       TOTP (..)
 
       -- * Actions
+    , getSecret
     , getTOTP
 
       -- * Interpretations
@@ -30,7 +31,8 @@ import qualified Text.Printf                as Printf
 ----------------------------------------------------------------------------------------------------
 
 data TOTP m a where
-  GetTOTP :: Token.TokenSpec -> Clock.POSIXTime -> TOTP m Text
+  GetSecret :: Token.TokenSpec -> TOTP m Text
+  GetTOTP   :: Token.TokenSpec -> Clock.POSIXTime -> TOTP m Text
 
 P.makeSem ''TOTP
 
@@ -41,14 +43,20 @@ P.makeSem ''TOTP
 
 runTOTP :: Members [SecretInput Text, Crypto, P.Error Err.EffError] r => Sem (TOTP : r) a -> Sem r a
 runTOTP = P.interpret $ \case
-  GetTOTP spec time -> do
-    secret <- Crypto.decryptSecret spec
-    case Encoding.convertFromBase Encoding.Base32 (encodeUtf8 secret :: ByteString) of
-      Left msg  -> P.throw $ Err.SecretDecryptError $ toText msg
-      Right key -> computeTOTP spec key time
+  GetSecret spec    -> snd <$> retrieveKeyAndSecret spec
+  GetTOTP spec time -> fst <$> retrieveKeyAndSecret spec >>= computeTOTP spec time
 
-computeTOTP :: Member (P.Error Err.EffError) r => Token.TokenSpec -> ByteString -> Clock.POSIXTime -> Sem r Text
-computeTOTP spec key time =
+retrieveKeyAndSecret :: Members [SecretInput Text, Crypto, P.Error Err.EffError] r
+                     => Token.TokenSpec
+                     -> Sem r (ByteString, Text)
+retrieveKeyAndSecret spec = do
+  secret <- Crypto.decryptSecret spec
+  case Encoding.convertFromBase Encoding.Base32 (encodeUtf8 secret :: ByteString) of
+    Left msg  -> P.throw $ Err.SecretDecryptError $ toText msg
+    Right key -> return (key, secret)
+
+computeTOTP :: Member (P.Error Err.EffError) r => Token.TokenSpec -> Clock.POSIXTime -> ByteString -> Sem r Text
+computeTOTP spec time key =
   case Token.tokenAlgorithm spec of
     Token.AlgorithmSHA1   -> makeOTP <$> makeParams HashAlgos.SHA1
     Token.AlgorithmSHA256 -> makeOTP <$> makeParams HashAlgos.SHA256
