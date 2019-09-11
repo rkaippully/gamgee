@@ -51,7 +51,9 @@ P.makeSem ''Crypto
 -- Programs
 ----------------------------------------------------------------------------------------------------
 
-encryptSecret :: Members [SI.SecretInput Text, Crypto] r => Token.TokenSpec -> Sem r Token.TokenSpec
+encryptSecret :: Members [SI.SecretInput Text, Crypto] r
+              => Token.TokenSpec
+              -> Sem r Token.TokenSpec
 encryptSecret spec =
   case Token.tokenSecret spec of
     -- Secret is already encrypted
@@ -69,7 +71,9 @@ encryptSecret spec =
         secret' <- encrypt secret password
         return spec { Token.tokenSecret = secret' }
 
-decryptSecret :: Members [SI.SecretInput Text, Crypto] r => Token.TokenSpec -> Sem r Text
+decryptSecret :: Members [SI.SecretInput Text, Crypto] r
+              => Token.TokenSpec
+              -> Sem r Text
 decryptSecret spec =
   case Token.tokenSecret spec of
     Token.TokenSecretPlainText plainSecret  -> return plainSecret

@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import qualified Data.Aeson                 as Aeson
 import qualified Data.Time.Clock.POSIX      as Clock
@@ -20,11 +20,12 @@ main :: IO ()
 main = do
   command <- Options.execParser parserInfo
   case command of
-    Cmd.AddToken spec -> runAddToken spec
-    Cmd.DeleteToken t -> runDeleteToken t
-    Cmd.ListTokens    -> runListTokens
-    Cmd.GetOTP t mode -> runGetOTP t mode
-    Cmd.GetInfo       -> runGetInfo
+    Cmd.AddToken spec    -> runAddToken spec
+    Cmd.DeleteToken t    -> runDeleteToken t
+    Cmd.ListTokens       -> runListTokens
+    Cmd.GetOTP t mode    -> runGetOTP t mode
+    Cmd.ChangePassword t -> runChangePassword t
+    Cmd.GetInfo          -> runGetInfo
 
 parserInfo :: Options.ParserInfo Cmd.Command
 parserInfo = Options.info (Options.helper
@@ -72,6 +73,18 @@ runGetOTP t o = do
     $ Eff.runStateJSON
     $ Eff.runTOTP
     $ Operation.getOTP t now
+
+runChangePassword :: Token.TokenIdentifier -> IO ()
+runChangePassword t = Eff.runM_
+                      $ Eff.runErrorStdErr
+                      $ Eff.runCryptoRandomIO
+                      $ Eff.runCrypto
+                      $ Eff.runSecretInputIO
+                      $ Eff.runByteStoreIO
+                      $ Eff.runJSONStore
+                      $ Eff.runStateJSON
+                      $ Eff.runTOTP
+                      $ Operation.changePassword t
 
 getConfig :: Member (Embed IO) r => Sem r (Maybe Token.Config)
 getConfig = do

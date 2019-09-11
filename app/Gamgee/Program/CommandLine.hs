@@ -21,6 +21,7 @@ data Command = AddToken Token.TokenSpec
              | DeleteToken Token.TokenIdentifier
              | ListTokens
              | GetOTP Token.TokenIdentifier OutputMode
+             | ChangePassword Token.TokenIdentifier
              | GetInfo
 
 getCommand :: Parser Command
@@ -28,6 +29,7 @@ getCommand = hsubparser (
     command "list" (info listTokens $ progDesc "List the names of all known tokens")
     <> command "add" (info addToken $ progDesc "Add a new token")
     <> command "delete" (info deleteToken $ progDesc "Delete a token")
+    <> command "change-password" (info changePassword $ progDesc "Change password of a token")
     <> command "info" (info getInfo $ progDesc "Print information about this Gamgee installation")
   )
   <|> getOTPOperation
@@ -76,6 +78,10 @@ getOTPOperation = GetOTP
                   <$> strArgument (help "Get a one-time password" <> metavar "TOKEN-LABEL")
                   <*> flag OutputClipboard OutputStdOut
                       (long "stdout" <> help "Send the OTP to stdout instead of clipboard")
+
+changePassword :: Parser Command
+changePassword = ChangePassword
+                 <$> strOption (long "label" <> short 'l' <> help "Label of the token")
 
 getInfo :: Parser Command
 getInfo = pure GetInfo
