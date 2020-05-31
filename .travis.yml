@@ -51,7 +51,7 @@ before_install:
   if [ `uname` = "Darwin" ]
   then
     travis_retry curl --insecure -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
-    brew install dhall-json@1.6.4
+    brew install dhall-json
   else
     travis_retry curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
     travis_retry curl -L https://github.com/dhall-lang/dhall-haskell/releases/download/1.32.0/dhall-json-1.6.4-x86_64-linux.tar.bz2 | tar xj -C ~/.local
