@@ -13,7 +13,7 @@ package.yaml: $(dhall-files)
 	echo "./dhall/package.dhall" | dhall-to-yaml > $@
 
 .hlint.yaml: $(dhall-files)
-	echo "./dhall/hlint.dhall" | dhall-to-yaml --omitNull > $@
+	echo "./dhall/hlint.dhall" | dhall-to-yaml --quoted > $@
 
 .stylish-haskell.yaml: $(dhall-files)
 	echo "./dhall/stylish-haskell.dhall" | dhall-to-yaml > $@
