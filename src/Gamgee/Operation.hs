@@ -99,5 +99,5 @@ changePassword ident = do
     Nothing   -> P.throw $ Eff.NoSuchToken ident
     Just spec -> do
       secret <- Eff.getSecret spec
-      spec' <- Eff.encryptSecret spec{ Token.tokenSecret = Token.TokenSecretPlainText secret }
+      spec' <- Eff.encryptSecret spec { Token.tokenSecret = Token.TokenSecretPlainText secret }
       P.put $ Map.insert ident spec' tokens
