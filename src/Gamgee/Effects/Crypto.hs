@@ -62,14 +62,14 @@ encryptSecret spec =
       -- Ask the user for a password
       password <- SI.secretInput "Password to encrypt (leave blank to skip encryption): "
 
-      if Text.null password
-      then return spec
-      else do
-        -- Sometimes the secret may contain extraneous chars - '=', '-', space etc. Clear those.
-        let secret = (Text.toUpper . Text.dropWhileEnd (== '=') . Text.replace " " "" . Text.replace "-" "" . Text.strip) plainSecret
+      -- Sometimes the secret may contain extraneous chars - '=', '-', space etc. Clear those.
+      let secret = (Text.toUpper . Text.dropWhileEnd (== '=') . Text.replace " " "" . Text.replace "-" "" . Text.strip) plainSecret
 
-        secret' <- encrypt secret password
-        return spec { Token.tokenSecret = secret' }
+      secret' <- if Text.null password
+                 then pure $ Token.TokenSecretPlainText secret
+                 else encrypt secret password
+
+      return spec { Token.tokenSecret = secret' }
 
 decryptSecret :: Members [SI.SecretInput Text, Crypto] r
               => Token.TokenSpec
