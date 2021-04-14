@@ -55,6 +55,17 @@ jobs:
               throw "Not a tag: " + context.ref;
             }
 
+      - name: Package
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          BIN="$(stack path --local-install-root)/bin/gamgee"
+          PKG_NAME=gamgee-${{ steps.get-tag.outputs.tag }}-${{ runner.os }}.tar.gz
+          cp $BIN .
+          chmod +x ./gamgee
+          tar -czf $PKG_NAME gamgee
+          echo "SHA256:"
+          shasum -a 256 $PKG_NAME
+
       - name: Release
         uses: ncipollo/release-action@v1
         if: startsWith(github.ref, 'refs/tags/v')
