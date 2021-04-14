@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/rkaippully/gamgee.svg?branch=master)](https://travis-ci.org/rkaippully/gamgee)
+[![Build Status](https://img.shields.io/github/workflow/status/rkaippully/gamgee/Haskell%20CI/master)](https://github.com/rkaippully/gamgee/actions?query=workflow%3A%22Haskell+CI%22+branch%3Amaster)
 [![Release](https://img.shields.io/github/release/rkaippully/gamgee.svg)](https://github.com/rkaippully/gamgee/releases)
 [![Hackage](https://img.shields.io/hackage/v/gamgee.svg)](https://hackage.haskell.org/package/gamgee)
 
