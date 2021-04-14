@@ -2,9 +2,13 @@ name: Haskell CI
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+
   pull_request:
-    branches: [master]
+    branches:
+      - master
 
 jobs:
   stack-build:
@@ -58,7 +62,7 @@ jobs:
       - name: Package
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          BIN="$(stack path --local-install-root)/bin/gamgee"
+          BIN="$(stack path --system-ghc --local-install-root)/bin/gamgee"
           PKG_NAME=gamgee-${{ steps.get-tag.outputs.tag }}-${{ runner.os }}.tar.gz
           cp $BIN .
           chmod +x ./gamgee
@@ -69,9 +73,10 @@ jobs:
       - name: Release
         uses: ncipollo/release-action@v1
         if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         with:
           allowUpdates: true
           artifactErrorsFailBuild: true
           artifacts: gamgee-${{ steps.get-tag.outputs.tag }}-${{ runner.os }}.tar.gz
+          token: ${{ secrets.ACCESS_TOKEN }}
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
