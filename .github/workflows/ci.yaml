@@ -1,0 +1,66 @@
+name: Haskell CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  stack-build:
+    name: Stack - os-${{ matrix.os }}
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v2
+
+      - name: Setup Haskell Build Environment
+        uses: haskell/actions/setup@v1
+        with:
+          ghc-version: 8.10.4
+          enable-stack: true
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.stack
+          key: ${{ runner.os }}-stack-${{ hashFiles(stack.yaml) }}
+
+      - name: Build
+        run: |
+          # Workaround for random errors on macos
+          rm -rf ~/.stack/setup-exe-src ~/.stack/setup-exe-cache
+          stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks
+
+      - name: Test
+        run: stack test --system-ghc --ta '--quickcheck-tests 200'
+
+      - name: Get Tag
+        id: get-tag
+        uses: actions/github-script@v3
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          script: |
+            if (context.ref.startsWith('refs/tags/v')) {
+              const tag = context.ref.substring(10);
+              core.setOutput('tag', tag);
+            } else {
+              throw "Not a tag: " + context.ref;
+            }
+
+      - name: Release
+        uses: ncipollo/release-action@v1
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        with:
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          artifacts: gamgee-${{ steps.get-tag.outputs.tag }}-${{ runner.os }}.tar.gz

@@ -44,7 +44,7 @@ P.makeSem ''TOTP
 runTOTP :: Members [SecretInput Text, Crypto, P.Error Err.EffError] r => Sem (TOTP : r) a -> Sem r a
 runTOTP = P.interpret $ \case
   GetSecret spec    -> snd <$> retrieveKeyAndSecret spec
-  GetTOTP spec time -> fst <$> retrieveKeyAndSecret spec >>= computeTOTP spec time
+  GetTOTP spec time -> retrieveKeyAndSecret spec >>= computeTOTP spec time . fst
 
 retrieveKeyAndSecret :: Members [SecretInput Text, Crypto, P.Error Err.EffError] r
                      => Token.TokenSpec

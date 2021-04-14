@@ -1,0 +1,113 @@
+cabal-version: 1.12
+
+name:           gamgee
+version:        1.2.2
+synopsis:       Tool for generating TOTP MFA tokens.
+description:    Tool for generating TOTP MFA tokens. Please see the README on GitHub at <https://github.com/rkaippully/gamgee#readme>
+category:       Authentication, Command Line
+homepage:       https://github.com/rkaippully/gamgee#readme
+bug-reports:    https://github.com/rkaippully/gamgee/issues
+author:         Raghu Kaippully
+maintainer:     rkaippully@gmail.com
+copyright:      2018-2021 Raghu Kaippully, Alexander Shestakov
+license:        MPL-2.0
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    ChangeLog.md
+    README.md
+    test/data/golden/getOTPTest.txt
+
+source-repository head
+  type: git
+  location: https://github.com/rkaippully/gamgee
+
+library
+  exposed-modules:
+      Gamgee.Operation
+      Gamgee.Token
+      Gamgee.Effects
+      Gamgee.Effects.Error
+      Gamgee.Effects.Crypto
+      Gamgee.Effects.CryptoRandom
+      Gamgee.Effects.SecretInput
+      Gamgee.Effects.TOTP
+      Gamgee.Effects.JSONStore
+      Gamgee.Effects.ByteStore
+  other-modules:
+      Paths_gamgee
+  hs-source-dirs:
+      src
+  default-extensions: ApplicativeDo BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms PolyKinds RankNTypes ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeApplications TypeFamilies TypeFamilyDependencies TypeOperators
+  ghc-options: -Wall -Wcompat -Wredundant-constraints -Wincomplete-record-updates -Wincomplete-uni-patterns
+  build-depends:
+      aeson ==1.5.6.0
+    , base ==4.14.1.0
+    , base64-bytestring ==1.1.0.0
+    , bytestring ==0.10.12.0
+    , cryptonite ==0.27
+    , memory ==0.15.0
+    , polysemy ==1.5.0.0
+    , relude ==0.7.0.0
+    , safe-exceptions ==0.1.7.1
+    , text ==1.2.4.1
+    , time ==1.9.3
+  default-language: Haskell2010
+
+executable gamgee
+  main-is: Main.hs
+  other-modules:
+      Gamgee.Program.CommandLine
+      Gamgee.Program.Effects
+      Paths_gamgee
+  hs-source-dirs:
+      app
+  default-extensions: ApplicativeDo BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms PolyKinds RankNTypes ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeApplications TypeFamilies TypeFamilyDependencies TypeOperators
+  ghc-options: -Wall -Wcompat -Wredundant-constraints -Wincomplete-record-updates -Wincomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      Hclip ==3.0.0.4
+    , aeson ==1.5.6.0
+    , base ==4.14.1.0
+    , directory ==1.3.6.0
+    , filepath ==1.4.2.1
+    , gamgee
+    , optparse-applicative ==0.15.1.0
+    , polysemy ==1.5.0.0
+    , relude ==0.7.0.0
+    , safe-exceptions ==0.1.7.1
+    , text ==1.2.4.1
+    , time ==1.9.3
+    , unix ==2.7.2.2
+  default-language: Haskell2010
+
+test-suite gamgee-test
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Gamgee.Test.Effects
+      Gamgee.Test.Golden
+      Gamgee.Test.Operation
+      Gamgee.Test.Property
+      Paths_gamgee
+  hs-source-dirs:
+      test
+  default-extensions: ApplicativeDo BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable DerivingStrategies EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings PatternSynonyms PolyKinds RankNTypes ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeApplications TypeFamilies TypeFamilyDependencies TypeOperators
+  ghc-options: -Wall -Wcompat -Wredundant-constraints -Wincomplete-record-updates -Wincomplete-uni-patterns -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      QuickCheck ==2.14.2
+    , aeson ==1.5.6.0
+    , base ==4.14.1.0
+    , bytestring ==0.10.12.0
+    , cryptonite ==0.27
+    , filepath ==1.4.2.1
+    , gamgee
+    , memory ==0.15.0
+    , polysemy ==1.5.0.0
+    , quickcheck-instances ==0.3.25.2
+    , relude ==0.7.0.0
+    , tasty ==1.2.3
+    , tasty-golden ==2.3.3.2
+    , tasty-quickcheck ==0.10.1.2
+    , text ==1.2.4.1
+    , time ==1.9.3
+  default-language: Haskell2010

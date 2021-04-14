@@ -1,5 +1,6 @@
-resolver: lts-15.14
+resolver: lts-17.9
 packages:
 - .
 extra-deps:
+- polysemy-1.5.0.0
 - Hclip-3.0.0.4
