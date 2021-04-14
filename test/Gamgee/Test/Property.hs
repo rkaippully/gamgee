@@ -47,9 +47,8 @@ instance T.Arbitrary Token.TokenPeriod where
   arbitrary = Token.TokenPeriod <$> T.choose (10, 120)
 
 instance T.Arbitrary Token.TokenSpec where
-  arbitrary = Token.TokenSpec
-              <$> pure Token.TOTP
-              <*> T.arbitrary
+  arbitrary = Token.TokenSpec Token.TOTP
+              <$> T.arbitrary
               <*> T.arbitrary
               <*> T.arbitrary
               <*> T.arbitrary

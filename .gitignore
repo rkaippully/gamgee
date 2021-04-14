@@ -1,6 +1,2 @@
 .stack-work/
 *~
-gamgee.cabal
-package.yaml
-.hlint.yaml
-.stylish-haskell.yaml

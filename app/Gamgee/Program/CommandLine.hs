@@ -41,9 +41,8 @@ addToken :: Parser Command
 addToken = AddToken <$> tokenSpec
 
 tokenSpec :: Parser Token.TokenSpec
-tokenSpec = Token.TokenSpec
-            <$> pure Token.TOTP
-            <*> strOption (long "label" <> short 'l'
+tokenSpec = Token.TokenSpec Token.TOTP
+            <$> strOption (long "label" <> short 'l'
                            <> help "Label of the token")
             <*> (Token.TokenSecretPlainText <$> strOption (long "secret" <> short 's'
                                                            <> help "Secret of the token"))

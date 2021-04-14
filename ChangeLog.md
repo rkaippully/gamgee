@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
+- Always performing upcase of a token secret #12 (maksar)
+- Simplified build #13
+- Upgraded to latest LTS
 
 ## [1.2.1] - 2020-05-31
 - Upgraded to latest stackage LTS
