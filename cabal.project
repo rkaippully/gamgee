@@ -1,0 +1,6 @@
+source-repository-package
+  type: git
+  location: https://github.com/jetho/Hclip.git
+  tag: 16795d473acb33dfb8d425ba22ad1016d3440044
+
+packages: .
